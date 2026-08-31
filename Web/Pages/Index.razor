@@ -138,7 +138,10 @@
                                                     <ol class="kappa-chain-list">
                                                         @foreach (var n in q.PrerequisiteChain)
                                                         {
-                                                            <li class="kappa-chain-row @(n.IsDone ? "is-done" : n.GateSatisfied ? "is-satisfied" : "")">
+                                                            <li class="@($"kappa-chain-row kappa-chain-row--clickable {(n.IsDone ? "is-done" : n.GateSatisfied ? "is-satisfied" : "")}")"
+                                                                role="button" tabindex="0"
+                                                                @onclick="() => OpenQuestModal(n.QuestId)"
+                                                                @onkeydown="@(e => OnChainRowKey(e, n.QuestId))">
                                                                 <MudIcon Size="Size.Small" Icon="@StatusIcon(n.Status)" Color="@StatusColor(n.Status)" />
                                                                 <span class="kappa-chain-name">
                                                                     @(string.IsNullOrWhiteSpace(n.Title) ? n.QuestId : n.Title)
@@ -167,6 +170,8 @@
             }
         </MudPaper>
     </div>
+
+    <QuestDetailModal Quest="modalQuest" OnClose="CloseQuestModal" />
 </KappaLayout>
 
 @code {
@@ -178,6 +183,28 @@
     private System.Threading.Timer? refreshTimer;
 
     private readonly HashSet<string> chainOpen = new();
+
+    private QuestViewModel? modalQuest;
+
+    private void OpenQuestModal(string questId)
+    {
+        try
+        {
+            modalQuest = QuestService.GetQuestDetail(questId);
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"[KappaTracker] Failed to load quest detail {questId}: {ex.Message}");
+        }
+    }
+
+    private void CloseQuestModal() => modalQuest = null;
+
+    private void OnChainRowKey(KeyboardEventArgs e, string questId)
+    {
+        if (e.Key is "Enter" or " ")
+            OpenQuestModal(questId);
+    }
 
     private void ToggleChain(string questId)
     {
@@ -223,6 +250,7 @@
     {
         selectedTraderId = traderId;
         chainOpen.Clear();
+        modalQuest = null;
         currentTrader = traders?.FirstOrDefault(t => t.TraderId == traderId);
         try
         {

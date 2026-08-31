@@ -67,5 +67,20 @@ namespace KappaTracker.Web.Controllers
                 return StatusCode(500, new { error = "Failed to get quests" });
             }
         }
+
+        [HttpGet("quest/{questId}")]
+        public ActionResult<QuestViewModel> GetQuestDetail(string questId)
+        {
+            try
+            {
+                var detail = _questService.GetQuestDetail(questId);
+                return detail is null ? NotFound() : Ok(detail);
+            }
+            catch (Exception ex)
+            {
+                _logger.Error($"[KappaTracker] Error getting quest detail {questId}", ex);
+                return StatusCode(500, new { error = "Failed to get quest detail" });
+            }
+        }
     }
 }
