@@ -55,7 +55,7 @@ namespace KappaTracker.Services
                     continue;
 
                 var traderId = (string)baseData.Id;
-                var quests = _questService.GetQuestsByTrader(traderId);
+                var quests = _questService.GetQuestsByTrader(traderId, includeChain: false);
                 if (quests.Count == 0)
                     continue;
 

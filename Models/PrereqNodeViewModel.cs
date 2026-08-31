@@ -13,6 +13,9 @@ namespace KappaTracker.Models
         /// <summary>Short non-quest gate, e.g. "Lv 12" or "LL 2 Prapor". Null when none.</summary>
         public string? GateNote { get; set; }
 
+        /// <summary>This prerequisite no longer blocks you: its gate status is met (may be short of Completed).</summary>
+        public bool GateSatisfied { get; set; }
+
         public bool IsDone => Status == KappaQuestStatus.Completed;
     }
 }

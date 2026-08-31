@@ -77,7 +77,7 @@ namespace KappaTracker.Services
         private TraderProgressViewModel BuildTraderProgress(Trader trader, PlayerProgress player)
         {
             var traderId = (string)trader.Base!.Id;
-            var quests = _questService.GetQuestsByTrader(traderId);
+            var quests = _questService.GetQuestsByTrader(traderId, includeChain: false);
             var completed = quests.Count(q => q.IsCompleted);
             var total = quests.Count;
             var percentage = total > 0 ? completed / (double)total * 100 : 0;

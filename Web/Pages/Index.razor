@@ -179,26 +179,29 @@
                                                 </span>
                                             </button>
                                             <MudCollapse Expanded="chainOpen.Contains(q.QuestId)">
-                                                <ol class="kappa-chain-list">
-                                                    @foreach (var n in q.PrerequisiteChain)
-                                                    {
-                                                        <li class="kappa-chain-row @(n.IsDone ? "is-done" : "")">
-                                                            <MudIcon Size="Size.Small" Icon="@StatusIcon(n.Status)" Color="@StatusColor(n.Status)" />
-                                                            <span class="kappa-chain-name">
-                                                                @(string.IsNullOrWhiteSpace(n.Title) ? n.QuestId : n.Title)
-                                                            </span>
-                                                            @if (n.IsKappaMilestone)
-                                                            {
-                                                                <span class="kappa-chain-tag">Kappa</span>
-                                                            }
-                                                            @if (!string.IsNullOrWhiteSpace(n.GateNote))
-                                                            {
-                                                                <span class="kappa-chain-gate">@n.GateNote</span>
-                                                            }
-                                                            <span class="kappa-chain-status">@StatusLabel(n.Status)</span>
-                                                        </li>
-                                                    }
-                                                </ol>
+                                                @if (chainOpen.Contains(q.QuestId))
+                                                {
+                                                    <ol class="kappa-chain-list">
+                                                        @foreach (var n in q.PrerequisiteChain)
+                                                        {
+                                                            <li class="kappa-chain-row @(n.IsDone ? "is-done" : n.GateSatisfied ? "is-satisfied" : "")">
+                                                                <MudIcon Size="Size.Small" Icon="@StatusIcon(n.Status)" Color="@StatusColor(n.Status)" />
+                                                                <span class="kappa-chain-name">
+                                                                    @(string.IsNullOrWhiteSpace(n.Title) ? n.QuestId : n.Title)
+                                                                </span>
+                                                                @if (n.IsKappaMilestone)
+                                                                {
+                                                                    <span class="kappa-chain-tag">Kappa</span>
+                                                                }
+                                                                @if (!string.IsNullOrWhiteSpace(n.GateNote))
+                                                                {
+                                                                    <span class="kappa-chain-gate">@n.GateNote</span>
+                                                                }
+                                                                <span class="kappa-chain-status">@StatusLabel(n.Status)</span>
+                                                            </li>
+                                                        }
+                                                    </ol>
+                                                }
                                             </MudCollapse>
                                         </div>
                                     }
@@ -235,8 +238,11 @@
         // Auto-sync every 5 seconds; disposed with the component.
         refreshTimer = new System.Threading.Timer(_ =>
         {
-            Reload();
-            InvokeAsync(StateHasChanged);
+            InvokeAsync(() =>
+            {
+                Reload();
+                StateHasChanged();
+            });
         }, null, TimeSpan.FromSeconds(5), TimeSpan.FromSeconds(5));
     }
 

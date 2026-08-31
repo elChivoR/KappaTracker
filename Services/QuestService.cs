@@ -109,7 +109,7 @@ namespace KappaTracker.Services
         /// Kappa-relevant quests for a trader, with localised name/description and their
         /// completion state for the active profile.
         /// </summary>
-        public List<QuestViewModel> GetQuestsByTrader(string traderId)
+        public List<QuestViewModel> GetQuestsByTrader(string traderId, bool includeChain = true)
         {
             var kappaIds = GetKappaQuestIds();
             var player = _profileService.GetActivePlayer();
@@ -129,7 +129,7 @@ namespace KappaTracker.Services
                     Description = ResolveLocale($"{questId} description"),
                     Status = status,
                     Requirements = BuildRequirements(quest, player, status),
-                    PrerequisiteChain = BuildChain(questId, kappaIds, player)
+                    PrerequisiteChain = includeChain ? BuildChain(questId, kappaIds, player) : new()
                 });
             }
 
@@ -209,13 +209,20 @@ namespace KappaTracker.Services
             var rows = new List<PrereqNodeViewModel>();
             foreach (var edge in _questGraph.GetAncestorChain(questId))
             {
+                var live = player.QuestStatusById.GetValueOrDefault(edge.QuestId, KappaQuestStatus.Locked);
+                var title = ResolveLocale($"{edge.QuestId} name");
+                if (string.IsNullOrWhiteSpace(title))
+                    title = edge.QuestName ?? string.Empty;
+
                 rows.Add(new PrereqNodeViewModel
                 {
                     QuestId = edge.QuestId,
-                    Title = ResolveLocale($"{edge.QuestId} name"),
-                    Status = player.QuestStatusById.GetValueOrDefault(edge.QuestId, KappaQuestStatus.Locked),
+                    Title = title,
+                    Status = live,
                     IsKappaMilestone = kappaIds.Contains(edge.QuestId),
-                    GateNote = edge.GateNote
+                    GateNote = edge.GateNote,
+                    GateSatisfied = live == KappaQuestStatus.Completed
+                                    || edge.SatisfyingStatuses.Contains(live)
                 });
             }
             return rows;

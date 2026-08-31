@@ -13,7 +13,7 @@ namespace KappaTracker.Models
         public List<PrereqNodeViewModel> PrerequisiteChain { get; set; } = new();
 
         public int PrereqTotal => PrerequisiteChain.Count;
-        public int PrereqCompletedCount => PrerequisiteChain.Count(n => n.IsDone);
+        public int PrereqCompletedCount => PrerequisiteChain.Count(n => n.GateSatisfied);
 
         public bool IsCompleted => Status == KappaQuestStatus.Completed;
         public bool IsActive => Status is KappaQuestStatus.InProgress or KappaQuestStatus.ReadyToHandIn;

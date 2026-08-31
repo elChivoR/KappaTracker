@@ -1,13 +1,24 @@
 using System.Collections.Concurrent;
+using KappaTracker.Models;
 using SPTarkov.Common.Models.Logging;
 using SPTarkov.DI.Annotations;
 using SPTarkov.Server.Core.Helpers.Quest;
+using SPTarkov.Server.Core.Models.Enums;
 
 namespace KappaTracker.Services
 {
-    public readonly record struct PrereqEdgeInfo(string QuestId, string? GateNote);
+    public readonly record struct PrereqEdgeInfo(
+        string QuestId,
+        string? GateNote,
+        string? QuestName,
+        IReadOnlyCollection<KappaQuestStatus> SatisfyingStatuses);
 
-    public sealed record QuestGraphNode(string Id, IReadOnlyList<string> PrereqIds, string? GateNote);
+    public sealed record QuestGraphNode(
+        string Id,
+        IReadOnlyList<string> PrereqIds,
+        string? GateNote,
+        string? QuestName,
+        IReadOnlyCollection<KappaQuestStatus> SatisfyingStatuses);
 
     [Injectable(InjectionType.Singleton)]
     public class QuestGraphService
@@ -16,7 +27,7 @@ namespace KappaTracker.Services
         private readonly QuestHelper _questHelper;
 
         private readonly object _graphLock = new();
-        private IReadOnlyDictionary<string, QuestGraphNode>? _graph;
+        private volatile IReadOnlyDictionary<string, QuestGraphNode>? _graph;
         private readonly ConcurrentDictionary<string, IReadOnlyList<PrereqEdgeInfo>> _chainCache = new();
 
         public QuestGraphService(ISptLogger<QuestGraphService> logger, QuestHelper questHelper)
@@ -81,13 +92,19 @@ namespace KappaTracker.Services
             var order = BuildAncestorOrder(questId, graph);
 
             var chain = order
-                .Select(id => new PrereqEdgeInfo(
-                    id,
-                    graph.TryGetValue(id, out var node) ? node.GateNote : null))
+                .Select(id =>
+                {
+                    graph.TryGetValue(id, out var node);
+                    return new PrereqEdgeInfo(
+                        id,
+                        node?.GateNote,
+                        node?.QuestName,
+                        node?.SatisfyingStatuses ?? new[] { KappaQuestStatus.Completed });
+                })
                 .ToList()
                 .AsReadOnly();
 
-            _chainCache[questId] = chain;
+            _chainCache.TryAdd(questId, chain);
             return chain;
         }
 
@@ -103,13 +120,19 @@ namespace KappaTracker.Services
 
         private IReadOnlyDictionary<string, QuestGraphNode> BuildGraph()
         {
-            var graph = new Dictionary<string, QuestGraphNode>();
+            var prereqsByQuest = new Dictionary<string, List<string>>();
+            var gatesByQuest = new Dictionary<string, List<string>>();
+            var nameByQuest = new Dictionary<string, string?>();
+            var satisfyingByQuest = new Dictionary<string, HashSet<KappaQuestStatus>>();
 
-            foreach (var quest in _questHelper.GetQuestsFromDb())
+            var quests = _questHelper.GetQuestsFromDb();
+
+            foreach (var quest in quests)
             {
                 var id = (string)quest.Id;
-                var prereqs = new List<string>();
-                var gates = new List<string>();
+                nameByQuest[id] = string.IsNullOrWhiteSpace(quest.QuestName) ? quest.Name : quest.QuestName;
+                var prereqs = prereqsByQuest.TryGetValue(id, out var pl) ? pl : (prereqsByQuest[id] = new());
+                var gates = gatesByQuest.TryGetValue(id, out var gl) ? gl : (gatesByQuest[id] = new());
 
                 foreach (var cond in quest.Conditions?.AvailableForStart ?? [])
                 {
@@ -120,8 +143,15 @@ namespace KappaTracker.Services
                     switch (type)
                     {
                         case "Quest":
+                            var mapped = MapConditionStatuses(cond.Status);
                             foreach (var target in ReadTargets(cond.Target))
+                            {
                                 prereqs.Add(target);
+                                var set = satisfyingByQuest.TryGetValue(target, out var ss)
+                                    ? ss : (satisfyingByQuest[target] = new());
+                                foreach (var m in mapped)
+                                    set.Add(m);
+                            }
                             break;
 
                         case "Level":
@@ -130,25 +160,79 @@ namespace KappaTracker.Services
                             break;
 
                         case "TraderLoyalty":
-                            // TraderLoyalty stores the trader id in Target, not TraderId (which is null in the DB).
+                            // trader id lives in Target, not TraderId (null in the DB)
                             var traderId = ReadTargets(cond.Target).FirstOrDefault()
                                            ?? cond.TraderId ?? string.Empty;
-                            var trader = TraderNames.GetValueOrDefault(traderId, "Trader");
+                            var trader = TraderNames.TryGetValue(traderId, out var tn)
+                                ? tn
+                                : (string.IsNullOrEmpty(traderId) ? "Trader" : traderId);
                             if (cond.Value is > 0)
                                 gates.Add($"LL {(int)cond.Value.Value} {trader}");
                             break;
                     }
                 }
+            }
 
+            var graph = new Dictionary<string, QuestGraphNode>(prereqsByQuest.Count);
+            foreach (var (id, prereqs) in prereqsByQuest)
+            {
+                var gates = gatesByQuest[id];
+                satisfyingByQuest.TryGetValue(id, out var satRaw);
+                var satisfying = NormalizeSatisfying(satRaw);
                 graph[id] = new QuestGraphNode(
                     id,
                     prereqs,
-                    gates.Count > 0 ? string.Join(" · ", gates.Distinct()) : null);
+                    gates.Count > 0 ? string.Join(" · ", gates.Distinct()) : null,
+                    nameByQuest.GetValueOrDefault(id),
+                    satisfying);
             }
 
             _logger.Success($"[KappaTracker] Prereq graph built: {graph.Count} quests");
             return graph;
         }
+
+        /// <summary>Maps a condition's allowed statuses to our enum; empty/null -> {Completed}.</summary>
+        private static IReadOnlyCollection<KappaQuestStatus> MapConditionStatuses(
+            IReadOnlyCollection<QuestStatusEnum>? statuses)
+        {
+            if (statuses is null || statuses.Count == 0)
+                return new[] { KappaQuestStatus.Completed };
+            var set = new HashSet<KappaQuestStatus>();
+            foreach (var s in statuses)
+                set.Add(MapRawStatus(s));
+            return set;
+        }
+
+        /// <summary>
+        /// A prereq whose gate accepts "Started" is also satisfied once you've gone further
+        /// (ReadyToHandIn / Completed); one that accepts "ReadyToHandIn" is satisfied when Completed.
+        /// Completed always satisfies unless the gate is Failed-only. Never returns empty.
+        /// </summary>
+        private static IReadOnlyCollection<KappaQuestStatus> NormalizeSatisfying(HashSet<KappaQuestStatus>? raw)
+        {
+            var set = raw is { Count: > 0 } ? new HashSet<KappaQuestStatus>(raw) : new HashSet<KappaQuestStatus>();
+            if (set.Count == 0)
+                set.Add(KappaQuestStatus.Completed);
+            if (set.Contains(KappaQuestStatus.InProgress))
+            {
+                set.Add(KappaQuestStatus.ReadyToHandIn);
+                set.Add(KappaQuestStatus.Completed);
+            }
+            if (set.Contains(KappaQuestStatus.ReadyToHandIn))
+                set.Add(KappaQuestStatus.Completed);
+            return set;
+        }
+
+        private static KappaQuestStatus MapRawStatus(QuestStatusEnum s) => s switch
+        {
+            QuestStatusEnum.Success => KappaQuestStatus.Completed,
+            QuestStatusEnum.Started => KappaQuestStatus.InProgress,
+            QuestStatusEnum.AvailableForFinish => KappaQuestStatus.ReadyToHandIn,
+            QuestStatusEnum.AvailableForStart or QuestStatusEnum.AvailableAfter => KappaQuestStatus.Available,
+            QuestStatusEnum.Fail or QuestStatusEnum.FailRestartable
+                or QuestStatusEnum.MarkedAsFailed or QuestStatusEnum.Expired => KappaQuestStatus.Failed,
+            _ => KappaQuestStatus.Locked
+        };
 
         private static IEnumerable<string> ReadTargets(SPTarkov.Server.Core.Utils.Json.ListOrT<string>? target)
         {
