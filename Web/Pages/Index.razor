@@ -27,7 +27,7 @@
                 <MudProgressLinear Color="Color.Warning" Rounded="true" Size="Size.Large"
                                    Value="@progress.OverallPercentage" Class="my-2" />
                 <MudText Typo="Typo.caption" Class="spt-muted">
-                    Profile: <strong>@(string.IsNullOrWhiteSpace(progress.ProfileName) ? "—" : progress.ProfileName)</strong>
+                    Profile: <strong>@(string.IsNullOrWhiteSpace(progress.ProfileName) ? "—" : progress.ProfileName)</strong>@(progress.ProfileLevel > 0 ? $" · Lv {progress.ProfileLevel}" : "")
                 </MudText>
             }
 

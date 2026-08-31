@@ -54,6 +54,7 @@ namespace KappaTracker.Services
             return new KappaProgressViewModel
             {
                 ProfileName = player.Nickname,
+                ProfileLevel = player.Level,
                 OverallPercentage = Math.Round(percentage, 2),
                 TotalMissionsRequired = totalRequired,
                 TotalMissionsCompleted = totalCompleted,

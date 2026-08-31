@@ -6,6 +6,7 @@ namespace KappaTracker.Models
     public class KappaProgressViewModel
     {
         public string ProfileName { get; set; } = string.Empty;
+        public int ProfileLevel { get; set; }
         public double OverallPercentage { get; set; }
         public int TotalMissionsRequired { get; set; }
         public int TotalMissionsCompleted { get; set; }
