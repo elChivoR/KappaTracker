@@ -1,0 +1,85 @@
+@if (Quest is not null)
+{
+    <div class="kappa-modal-backdrop" tabindex="-1" @ref="_backdrop"
+         @onclick="Close" @onkeydown="OnKeyDown">
+        <div class="kappa-modal" @onclick:stopPropagation="true">
+            <div class="kappa-modal-head">
+                <MudIcon Size="Size.Small" Icon="@StatusIcon(Quest.Status)" Color="@StatusColor(Quest.Status)" />
+                <span class="kappa-modal-title">@Quest.Title</span>
+                <span class="@($"kappa-status kappa-status--{Quest.Status.ToString().ToLowerInvariant()}")">
+                    @StatusLabel(Quest.Status)
+                </span>
+                <button type="button" class="kappa-modal-close" aria-label="Close" @onclick="Close">&times;</button>
+            </div>
+            <div class="kappa-modal-body">
+                @if (!string.IsNullOrWhiteSpace(Quest.Description))
+                {
+                    <MudText Typo="Typo.body2" Class="spt-muted kappa-quest-desc">@Quest.Description</MudText>
+                }
+                @if (!string.IsNullOrWhiteSpace(Quest.GateNote))
+                {
+                    <div class="kappa-modal-gate">
+                        <span class="kappa-chain-gate">@Quest.GateNote</span>
+                        <span class="spt-muted">required to start</span>
+                    </div>
+                }
+                <QuestRequirements Requirements="Quest.Requirements" />
+            </div>
+        </div>
+    </div>
+}
+
+@code {
+    [Parameter] public QuestViewModel? Quest { get; set; }
+    [Parameter] public EventCallback OnClose { get; set; }
+
+    private ElementReference _backdrop;
+    private string? _focusedFor;
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (Quest is not null && _focusedFor != Quest.QuestId)
+        {
+            _focusedFor = Quest.QuestId;
+            try { await _backdrop.FocusAsync(); } catch { /* element gone */ }
+        }
+        else if (Quest is null)
+        {
+            _focusedFor = null;
+        }
+    }
+
+    private Task Close() => OnClose.InvokeAsync();
+
+    private Task OnKeyDown(KeyboardEventArgs e) =>
+        e.Key == "Escape" ? OnClose.InvokeAsync() : Task.CompletedTask;
+
+    private static string StatusIcon(KappaQuestStatus s) => s switch
+    {
+        KappaQuestStatus.Completed => Icons.Material.Filled.CheckCircle,
+        KappaQuestStatus.ReadyToHandIn => Icons.Material.Filled.AssignmentTurnedIn,
+        KappaQuestStatus.InProgress => Icons.Material.Filled.Autorenew,
+        KappaQuestStatus.Available => Icons.Material.Outlined.RadioButtonUnchecked,
+        KappaQuestStatus.Failed => Icons.Material.Filled.Cancel,
+        _ => Icons.Material.Filled.Lock
+    };
+
+    private static Color StatusColor(KappaQuestStatus s) => s switch
+    {
+        KappaQuestStatus.Completed => Color.Success,
+        KappaQuestStatus.ReadyToHandIn => Color.Warning,
+        KappaQuestStatus.InProgress => Color.Info,
+        KappaQuestStatus.Failed => Color.Error,
+        _ => Color.Default
+    };
+
+    private static string StatusLabel(KappaQuestStatus s) => s switch
+    {
+        KappaQuestStatus.Completed => "Completed",
+        KappaQuestStatus.ReadyToHandIn => "Turn in",
+        KappaQuestStatus.InProgress => "In progress",
+        KappaQuestStatus.Available => "Available",
+        KappaQuestStatus.Failed => "Failed",
+        _ => "Locked"
+    };
+}
