@@ -352,3 +352,111 @@
     color: #052e16;
     background: #4ade80;
 }
+
+/* ---------- prerequisite chain ---------- */
+
+.kappa-chain {
+    margin-top: 14px;
+    border-top: 1px dashed var(--spt-border);
+    padding-top: 10px;
+}
+
+.kappa-chain-toggle {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    width: 100%;
+    padding: 4px 0;
+    background: none;
+    border: 0;
+    color: var(--spt-text-muted);
+    font: inherit;
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 0.03em;
+    text-transform: uppercase;
+    cursor: pointer;
+}
+
+.kappa-chain-toggle:hover {
+    color: var(--spt-text);
+}
+
+.kappa-chain-count {
+    margin-left: auto;
+    font-size: 11px;
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+    padding: 2px 7px;
+    border-radius: 999px;
+    color: var(--spt-text-muted);
+    background: rgba(255, 255, 255, 0.06);
+}
+
+.kappa-chain-count.is-full {
+    color: #052e16;
+    background: #4ade80;
+}
+
+.kappa-chain-list {
+    list-style: none;
+    margin: 8px 0 2px;
+    padding: 0;
+    counter-reset: step;
+}
+
+.kappa-chain-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 5px 8px;
+    border-left: 2px solid var(--spt-border-strong);
+    margin-left: 4px;
+}
+
+.kappa-chain-row.is-done {
+    opacity: 0.55;
+}
+
+.kappa-chain-row.is-done .kappa-chain-name {
+    text-decoration: line-through;
+}
+
+.kappa-chain-name {
+    flex: 1;
+    min-width: 0;
+    font-size: 13px;
+    color: var(--spt-text);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.kappa-chain-tag {
+    flex-shrink: 0;
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    padding: 1px 6px;
+    border-radius: 999px;
+    color: var(--spt-accent);
+    border: 1px solid rgba(250, 204, 21, 0.4);
+    background: rgba(250, 204, 21, 0.1);
+}
+
+.kappa-chain-gate {
+    flex-shrink: 0;
+    font-size: 11px;
+    font-weight: 600;
+    color: #7dd3fc;
+}
+
+.kappa-chain-status {
+    flex-shrink: 0;
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.03em;
+    text-transform: uppercase;
+    color: var(--spt-text-muted);
+}

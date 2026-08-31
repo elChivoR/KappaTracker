@@ -164,6 +164,43 @@
                                             }
                                         </div>
                                     }
+
+                                    @if (q.PrerequisiteChain.Count > 0)
+                                    {
+                                        <div class="kappa-chain">
+                                            <button type="button" class="kappa-chain-toggle"
+                                                    @onclick="() => ToggleChain(q.QuestId)">
+                                                <MudIcon Size="Size.Small"
+                                                         Icon="@(chainOpen.Contains(q.QuestId) ? Icons.Material.Filled.ExpandMore : Icons.Material.Filled.ChevronRight)" />
+                                                <span>Path to unlock</span>
+                                                <span class="kappa-chain-count @(q.PrereqCompletedCount == q.PrereqTotal ? "is-full" : "")">
+                                                    @q.PrereqCompletedCount / @q.PrereqTotal
+                                                </span>
+                                            </button>
+                                            <MudCollapse Expanded="chainOpen.Contains(q.QuestId)">
+                                                <ol class="kappa-chain-list">
+                                                    @foreach (var n in q.PrerequisiteChain)
+                                                    {
+                                                        <li class="kappa-chain-row @(n.IsDone ? "is-done" : "")">
+                                                            <MudIcon Size="Size.Small" Icon="@StatusIcon(n.Status)" Color="@StatusColor(n.Status)" />
+                                                            <span class="kappa-chain-name">
+                                                                @(string.IsNullOrWhiteSpace(n.Title) ? n.QuestId : n.Title)
+                                                            </span>
+                                                            @if (n.IsKappaMilestone)
+                                                            {
+                                                                <span class="kappa-chain-tag">Kappa</span>
+                                                            }
+                                                            @if (!string.IsNullOrWhiteSpace(n.GateNote))
+                                                            {
+                                                                <span class="kappa-chain-gate">@n.GateNote</span>
+                                                            }
+                                                            <span class="kappa-chain-status">@StatusLabel(n.Status)</span>
+                                                        </li>
+                                                    }
+                                                </ol>
+                                            </MudCollapse>
+                                        </div>
+                                    }
                                 </ChildContent>
                             </MudExpansionPanel>
                         }
@@ -181,6 +218,14 @@
     private TraderViewModel? currentTrader;
     private string? selectedTraderId;
     private System.Threading.Timer? refreshTimer;
+
+    private readonly HashSet<string> chainOpen = new();
+
+    private void ToggleChain(string questId)
+    {
+        if (!chainOpen.Remove(questId))
+            chainOpen.Add(questId);
+    }
 
     protected override void OnInitialized()
     {
@@ -216,6 +261,7 @@
     private void SelectTrader(string traderId)
     {
         selectedTraderId = traderId;
+        chainOpen.Clear();
         currentTrader = traders?.FirstOrDefault(t => t.TraderId == traderId);
         try
         {
