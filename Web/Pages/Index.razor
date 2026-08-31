@@ -117,53 +117,7 @@
                                         <MudText Typo="Typo.body2" Class="spt-muted kappa-quest-desc">@q.Description</MudText>
                                     }
 
-                                    @if (q.Requirements.Count == 0)
-                                    {
-                                        <MudText Typo="Typo.caption" Class="spt-muted">No tracked requirements.</MudText>
-                                    }
-                                    else
-                                    {
-                                        <div class="kappa-reqs">
-                                            @foreach (var r in q.Requirements)
-                                            {
-                                                <div class="kappa-req @(r.IsMet ? "is-met" : "")">
-                                                    <MudIcon Size="Size.Small"
-                                                             Icon="@(r.IsMet ? Icons.Material.Filled.CheckCircle : Icons.Material.Outlined.Circle)"
-                                                             Color="@(r.IsMet ? Color.Success : Color.Default)" />
-                                                    @if (r.IsItem)
-                                                    {
-                                                        @foreach (var tpl in r.ItemIds)
-                                                        {
-                                                            <MudTooltip Placement="Placement.Top" Arrow="true" Delay="120">
-                                                                <ChildContent>
-                                                                    <img class="kappa-req-icon" src="@($"kappa/api/icon/{tpl}")"
-                                                                         alt="" loading="lazy" />
-                                                                </ChildContent>
-                                                                <TooltipContent>
-                                                                    <div class="kappa-icon-pop">
-                                                                        <img src="@($"kappa/api/icon/{tpl}")" alt="" loading="lazy" />
-                                                                        @if (!string.IsNullOrWhiteSpace(r.ItemName))
-                                                                        {
-                                                                            <span class="kappa-icon-pop-name">@r.ItemName</span>
-                                                                        }
-                                                                    </div>
-                                                                </TooltipContent>
-                                                            </MudTooltip>
-                                                        }
-                                                    }
-                                                    <span class="kappa-req-text">
-                                                        @(string.IsNullOrWhiteSpace(r.Description) ? r.Type : r.Description)
-                                                    </span>
-                                                    @if (r.IsItem)
-                                                    {
-                                                        <span class="kappa-req-count @(r.IsMet || r.HasEnoughItems ? "is-enough" : "")">
-                                                            @(r.IsMet ? r.RequiredCount : r.OwnedCount) / @r.RequiredCount@(r.FoundInRaidRequired ? " FiR" : "")
-                                                        </span>
-                                                    }
-                                                </div>
-                                            }
-                                        </div>
-                                    }
+                                    <QuestRequirements Requirements="q.Requirements" />
 
                                     @if (q.PrerequisiteChain.Count > 0)
                                     {
