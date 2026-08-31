@@ -1,3 +1,4 @@
+using System.Collections.Concurrent;
 using SPTarkov.Common.Models.Logging;
 using SPTarkov.DI.Annotations;
 using SPTarkov.Server.Core.Helpers.Quest;
@@ -14,8 +15,9 @@ namespace KappaTracker.Services
         private readonly ISptLogger<QuestGraphService> _logger;
         private readonly QuestHelper _questHelper;
 
+        private readonly object _graphLock = new();
         private IReadOnlyDictionary<string, QuestGraphNode>? _graph;
-        private readonly Dictionary<string, IReadOnlyList<PrereqEdgeInfo>> _chainCache = new();
+        private readonly ConcurrentDictionary<string, IReadOnlyList<PrereqEdgeInfo>> _chainCache = new();
 
         public QuestGraphService(ISptLogger<QuestGraphService> logger, QuestHelper questHelper)
         {
@@ -75,17 +77,28 @@ namespace KappaTracker.Services
             if (_chainCache.TryGetValue(questId, out var cached))
                 return cached;
 
-            var graph = _graph ??= BuildGraph();
+            var graph = GetGraph();
             var order = BuildAncestorOrder(questId, graph);
 
             var chain = order
                 .Select(id => new PrereqEdgeInfo(
                     id,
                     graph.TryGetValue(id, out var node) ? node.GateNote : null))
-                .ToList();
+                .ToList()
+                .AsReadOnly();
 
             _chainCache[questId] = chain;
             return chain;
+        }
+
+        private IReadOnlyDictionary<string, QuestGraphNode> GetGraph()
+        {
+            if (_graph is not null)
+                return _graph;
+            lock (_graphLock)
+            {
+                return _graph ??= BuildGraph();
+            }
         }
 
         private IReadOnlyDictionary<string, QuestGraphNode> BuildGraph()
@@ -117,7 +130,7 @@ namespace KappaTracker.Services
                             break;
 
                         case "TraderLoyalty":
-                            var trader = TraderNames.GetValueOrDefault(cond.TraderId ?? string.Empty, "trader");
+                            var trader = TraderNames.GetValueOrDefault(cond.TraderId ?? string.Empty, "Trader");
                             if (cond.Value is > 0)
                                 gates.Add($"LL {(int)cond.Value.Value} {trader}");
                             break;
