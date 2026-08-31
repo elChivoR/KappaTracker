@@ -21,6 +21,7 @@ namespace KappaTracker.Services
         private readonly QuestHelper _questHelper;
         private readonly LocaleService _localeService;
         private readonly ProfileService _profileService;
+        private readonly QuestGraphService _questGraph;
 
         private HashSet<string>? _kappaQuestIds;
         private Dictionary<string, string>? _localeCache;
@@ -47,12 +48,14 @@ namespace KappaTracker.Services
             ISptLogger<QuestService> logger,
             QuestHelper questHelper,
             LocaleService localeService,
-            ProfileService profileService)
+            ProfileService profileService,
+            QuestGraphService questGraph)
         {
             _logger = logger;
             _questHelper = questHelper;
             _localeService = localeService;
             _profileService = profileService;
+            _questGraph = questGraph;
         }
 
         /// <summary>
@@ -125,7 +128,8 @@ namespace KappaTracker.Services
                     Title = ResolveQuestName(questId, quest),
                     Description = ResolveLocale($"{questId} description"),
                     Status = status,
-                    Requirements = BuildRequirements(quest, player, status)
+                    Requirements = BuildRequirements(quest, player, status),
+                    PrerequisiteChain = BuildChain(questId, kappaIds, player)
                 });
             }
 
@@ -196,6 +200,24 @@ namespace KappaTracker.Services
                 rows.Add(row);
             }
 
+            return rows;
+        }
+
+        private List<PrereqNodeViewModel> BuildChain(
+            string questId, HashSet<string> kappaIds, PlayerProgress player)
+        {
+            var rows = new List<PrereqNodeViewModel>();
+            foreach (var edge in _questGraph.GetAncestorChain(questId))
+            {
+                rows.Add(new PrereqNodeViewModel
+                {
+                    QuestId = edge.QuestId,
+                    Title = ResolveLocale($"{edge.QuestId} name"),
+                    Status = player.QuestStatusById.GetValueOrDefault(edge.QuestId, KappaQuestStatus.Locked),
+                    IsKappaMilestone = kappaIds.Contains(edge.QuestId),
+                    GateNote = edge.GateNote
+                });
+            }
             return rows;
         }
 
