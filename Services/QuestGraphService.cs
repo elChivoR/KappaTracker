@@ -130,7 +130,10 @@ namespace KappaTracker.Services
                             break;
 
                         case "TraderLoyalty":
-                            var trader = TraderNames.GetValueOrDefault(cond.TraderId ?? string.Empty, "Trader");
+                            // TraderLoyalty stores the trader id in Target, not TraderId (which is null in the DB).
+                            var traderId = ReadTargets(cond.Target).FirstOrDefault()
+                                           ?? cond.TraderId ?? string.Empty;
+                            var trader = TraderNames.GetValueOrDefault(traderId, "Trader");
                             if (cond.Value is > 0)
                                 gates.Add($"LL {(int)cond.Value.Value} {trader}");
                             break;
