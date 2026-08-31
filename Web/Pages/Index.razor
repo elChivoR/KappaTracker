@@ -169,6 +169,7 @@
                                     {
                                         <div class="kappa-chain">
                                             <button type="button" class="kappa-chain-toggle"
+                                                    aria-expanded="@(chainOpen.Contains(q.QuestId))"
                                                     @onclick="() => ToggleChain(q.QuestId)">
                                                 <MudIcon Size="Size.Small"
                                                          Icon="@(chainOpen.Contains(q.QuestId) ? Icons.Material.Filled.ExpandMore : Icons.Material.Filled.ChevronRight)" />

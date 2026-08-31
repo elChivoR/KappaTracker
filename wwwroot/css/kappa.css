@@ -409,9 +409,22 @@
     display: flex;
     align-items: center;
     gap: 8px;
-    padding: 5px 8px;
+    padding: 5px 8px 5px 28px;
     border-left: 2px solid var(--spt-border-strong);
     margin-left: 4px;
+    position: relative;
+    counter-increment: step;
+}
+
+.kappa-chain-row::before {
+    content: counter(step);
+    position: absolute;
+    left: 8px;
+    font-size: 10px;
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+    color: var(--spt-text-muted);
+    opacity: 0.7;
 }
 
 .kappa-chain-row.is-done {
