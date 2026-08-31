@@ -1,0 +1,31 @@
+<HeadContent>
+    <link href="/KappaTracker/css/kappa.css" rel="stylesheet" />
+</HeadContent>
+
+<div class="kappa-page spt-page">
+    <div class="kappa-shell pa-4">
+        <MudPaper Elevation="0" Class="spt-panel pa-4 mb-4">
+            <div class="kappa-headbar">
+                <img class="kappa-kappa-icon"
+                     src="@($"kappa/api/icon/{KappaTracker.ModInfo.KappaContainerTpl}")"
+                     alt="Kappa secure container" />
+                <div class="kappa-headbar-text">
+                    <div class="d-flex align-center gap-2">
+                        <MudText Typo="Typo.h5" Class="spt-title">Kappa Tracker</MudText>
+                        <span class="kappa-version">v@(KappaTracker.ModInfo.Version)</span>
+                    </div>
+                    <MudText Typo="Typo.body2" Class="spt-muted">
+                        Track your progress toward the Kappa secure container
+                    </MudText>
+                </div>
+            </div>
+        </MudPaper>
+
+        @ChildContent
+    </div>
+</div>
+
+@code {
+    [Parameter, EditorRequired]
+    public RenderFragment? ChildContent { get; set; }
+}

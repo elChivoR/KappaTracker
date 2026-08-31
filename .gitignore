@@ -1,0 +1,29 @@
+# Build results
+[Bb]in/
+[Oo]bj/
+[Ll]og/
+[Ll]ogs/
+
+# Visual Studio / Rider
+.vs/
+.idea/
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+
+# .NET
+project.lock.json
+project.fragment.lock.json
+artifacts/
+*.nupkg
+
+# Runtime / local config overrides
+config.local.json
+
+# Downloaded item icons (runtime cache)
+icon-cache/
+
+# OS
+.DS_Store
+Thumbs.db

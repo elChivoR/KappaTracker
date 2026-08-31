@@ -1,0 +1,304 @@
+using KappaTracker.Models;
+using SPTarkov.Common.Models.Logging;
+using SPTarkov.DI.Annotations;
+using SPTarkov.Server.Core.Helpers.Quest;
+using SPTarkov.Server.Core.Models.Eft.Common.Tables;
+using SPTarkov.Server.Core.Services.Locales;
+using SPTarkov.Server.Core.Utils.Json;
+
+namespace KappaTracker.Services
+{
+    [Injectable(InjectionType.Singleton)]
+    public class QuestService
+    {
+        /// <summary>"Collector" - the quest that unlocks the Kappa secure container.</summary>
+        private const string CollectorQuestId = "5c51aac186f77432ea65c552";
+
+        /// <summary>Game default. The tracker ignores the server's own locale setting.</summary>
+        public const string DefaultLanguage = "en";
+
+        private readonly ISptLogger<QuestService> _logger;
+        private readonly QuestHelper _questHelper;
+        private readonly LocaleService _localeService;
+        private readonly ProfileService _profileService;
+
+        private HashSet<string>? _kappaQuestIds;
+        private Dictionary<string, string>? _localeCache;
+        private string _language = DefaultLanguage;
+
+        /// <summary>
+        /// Language used for quest names/descriptions. Defaults to English; set this
+        /// (e.g. from a future UI selector) to switch. Invalidates the locale cache.
+        /// </summary>
+        public string Language
+        {
+            get => _language;
+            set
+            {
+                var lang = string.IsNullOrWhiteSpace(value) ? DefaultLanguage : value.Trim().ToLowerInvariant();
+                if (lang == _language)
+                    return;
+                _language = lang;
+                _localeCache = null;
+            }
+        }
+
+        public QuestService(
+            ISptLogger<QuestService> logger,
+            QuestHelper questHelper,
+            LocaleService localeService,
+            ProfileService profileService)
+        {
+            _logger = logger;
+            _questHelper = questHelper;
+            _localeService = localeService;
+            _profileService = profileService;
+        }
+
+        /// <summary>
+        /// Quest IDs required for the Kappa container: the "Collector" quest plus every
+        /// quest it lists as a completion prerequisite. Falls back to every quest in the
+        /// database if the Collector quest can't be found (e.g. heavily modded setups).
+        /// </summary>
+        public HashSet<string> GetKappaQuestIds()
+        {
+            if (_kappaQuestIds is not null)
+                return _kappaQuestIds;
+
+            var allQuests = _questHelper.GetQuestsFromDb();
+            var collector = allQuests.FirstOrDefault(q => (string)q.Id == CollectorQuestId);
+
+            // Collector lists its prerequisite quests as "Quest" conditions under
+            // AvailableForStart (AvailableForFinish holds the item hand-ins).
+            var ids = new HashSet<string>();
+            var conditions = collector?.Conditions;
+            if (conditions is not null)
+            {
+                foreach (var cond in Concat(conditions.AvailableForStart, conditions.AvailableForFinish))
+                {
+                    if (cond.ConditionType != "Quest" && cond.Type != "Quest")
+                        continue;
+
+                    foreach (var target in ReadTargets(cond.Target))
+                        ids.Add(target);
+                }
+            }
+
+            if (ids.Count == 0)
+            {
+                _logger.Warning(
+                    "[KappaTracker] Could not derive the Kappa quest list from the Collector quest; " +
+                    "falling back to ALL quests");
+                foreach (var quest in allQuests)
+                    ids.Add(quest.Id);
+            }
+            else
+            {
+                ids.Add(CollectorQuestId);
+            }
+
+            _kappaQuestIds = ids;
+            _logger.Success($"[KappaTracker] Tracking {ids.Count} Kappa quests");
+            return _kappaQuestIds;
+        }
+
+        /// <summary>
+        /// Kappa-relevant quests for a trader, with localised name/description and their
+        /// completion state for the active profile.
+        /// </summary>
+        public List<QuestViewModel> GetQuestsByTrader(string traderId)
+        {
+            var kappaIds = GetKappaQuestIds();
+            var player = _profileService.GetActivePlayer();
+            var quests = new List<QuestViewModel>();
+
+            foreach (var quest in _questHelper.GetQuestsFromDb())
+            {
+                var questId = (string)quest.Id;
+                if (!kappaIds.Contains(questId) || (string)quest.TraderId != traderId)
+                    continue;
+
+                var status = player.QuestStatusById.GetValueOrDefault(questId, KappaQuestStatus.Locked);
+                quests.Add(new QuestViewModel
+                {
+                    QuestId = questId,
+                    Title = ResolveQuestName(questId, quest),
+                    Description = ResolveLocale($"{questId} description"),
+                    Status = status,
+                    Requirements = BuildRequirements(quest, player, status)
+                });
+            }
+
+            // Active quests first, then available, locked, done, failed - then by name.
+            return quests
+                .OrderBy(q => SortRank(q.Status))
+                .ThenBy(q => q.Title, StringComparer.OrdinalIgnoreCase)
+                .ToList();
+        }
+
+        private static int SortRank(KappaQuestStatus status) => status switch
+        {
+            KappaQuestStatus.ReadyToHandIn => 0,
+            KappaQuestStatus.InProgress => 1,
+            KappaQuestStatus.Available => 2,
+            KappaQuestStatus.Locked => 3,
+            KappaQuestStatus.Completed => 4,
+            KappaQuestStatus.Failed => 5,
+            _ => 6
+        };
+
+        /// <summary>
+        /// Turns a quest's completion conditions into readable requirement rows. Item
+        /// hand-over / find conditions are cross-checked against the profile inventory.
+        /// </summary>
+        private List<QuestRequirementViewModel> BuildRequirements(
+            Quest quest, PlayerProgress player, KappaQuestStatus status)
+        {
+            var questId = (string)quest.Id;
+            // ReadyToHandIn means every finish-condition is already satisfied.
+            var questDone = status is KappaQuestStatus.Completed or KappaQuestStatus.ReadyToHandIn;
+            player.CompletedConditionsByQuest.TryGetValue(questId, out var doneConditions);
+
+            var rows = new List<QuestRequirementViewModel>();
+            foreach (var cond in quest.Conditions?.AvailableForFinish ?? [])
+            {
+                var conditionId = (string)cond.Id;
+                var type = !string.IsNullOrWhiteSpace(cond.ConditionType)
+                    ? cond.ConditionType!
+                    : cond.Type ?? string.Empty;
+
+                var row = new QuestRequirementViewModel
+                {
+                    Type = type,
+                    Description = ResolveLocale(conditionId),
+                    IsMet = questDone || (doneConditions?.Contains(conditionId) ?? false)
+                };
+
+                if (type is "HandoverItem" or "FindItem")
+                {
+                    // A condition can list many interchangeable tpls (e.g. every BEAR
+                    // dogtag variant). Count ownership across all of them, but only show
+                    // one representative icon.
+                    var tpls = ReadTargets(cond.Target).ToList();
+                    row.IsItem = true;
+                    row.ItemIds = tpls.Take(1).ToList();
+                    row.RequiredCount = (int)(cond.Value ?? 1);
+                    row.FoundInRaidRequired = cond.OnlyFoundInRaid == true;
+                    row.ItemName = ResolveItemName(tpls);
+                    row.OwnedCount = tpls.Sum(tpl => row.FoundInRaidRequired
+                        ? player.InventoryFirCounts.GetValueOrDefault(tpl)
+                        : player.InventoryCounts.GetValueOrDefault(tpl));
+                }
+
+                if (string.IsNullOrWhiteSpace(row.Description))
+                    row.Description = FallbackDescription(type);
+
+                rows.Add(row);
+            }
+
+            return rows;
+        }
+
+        private string ResolveItemName(IReadOnlyList<string> tpls)
+        {
+            var names = tpls
+                .Select(tpl =>
+                {
+                    var name = ResolveLocale($"{tpl} Name");
+                    return string.IsNullOrWhiteSpace(name) ? ResolveLocale($"{tpl} ShortName") : name;
+                })
+                .Where(name => !string.IsNullOrWhiteSpace(name))
+                .Distinct(StringComparer.OrdinalIgnoreCase)
+                .ToList();
+
+            if (names.Count == 0)
+                return string.Empty;
+
+            return names.Count <= 3
+                ? string.Join(" / ", names)
+                : $"{string.Join(" / ", names.Take(3))} +{names.Count - 3}";
+        }
+
+        private static string FallbackDescription(string type) => type switch
+        {
+            "HandoverItem" => "Hand over item",
+            "FindItem" => "Find item",
+            "CounterCreator" => "Complete objective",
+            "Level" => "Reach required level",
+            "TraderLoyalty" => "Reach trader loyalty level",
+            "TraderStanding" => "Reach trader standing",
+            "Skill" => "Reach required skill level",
+            "Quest" => "Complete prerequisite quest",
+            "PlaceBeacon" => "Place item at location",
+            "LeaveItemAtLocation" => "Leave item at location",
+            "" => "Objective",
+            _ => type
+        };
+
+        private static IEnumerable<QuestCondition> Concat(
+            List<QuestCondition>? a, List<QuestCondition>? b)
+        {
+            foreach (var c in a ?? [])
+                yield return c;
+            foreach (var c in b ?? [])
+                yield return c;
+        }
+
+        private static IEnumerable<string> ReadTargets(ListOrT<string>? target)
+        {
+            if (target is null)
+                yield break;
+
+            if (target.IsList && target.List is not null)
+            {
+                foreach (var value in target.List)
+                    yield return value;
+            }
+            else if (target.IsItem && target.Item is not null)
+            {
+                yield return target.Item;
+            }
+        }
+
+        private string ResolveQuestName(string questId, Quest quest)
+        {
+            var fromLocale = ResolveLocale($"{questId} name");
+            if (!string.IsNullOrWhiteSpace(fromLocale))
+                return fromLocale;
+
+            return string.IsNullOrWhiteSpace(quest.QuestName)
+                ? quest.Name ?? questId
+                : quest.QuestName;
+        }
+
+        private string ResolveLocale(string key)
+        {
+            _localeCache ??= LoadLocale();
+            return _localeCache.TryGetValue(key, out var value) ? value : string.Empty;
+        }
+
+        private Dictionary<string, string> LoadLocale()
+        {
+            try
+            {
+                var db = _localeService.GetLocaleDb(_language);
+                if (db is { Count: > 0 })
+                    return db;
+
+                if (_language != DefaultLanguage)
+                {
+                    _logger.Warning($"[KappaTracker] Locale '{_language}' unavailable; falling back to '{DefaultLanguage}'");
+                    db = _localeService.GetLocaleDb(DefaultLanguage);
+                    if (db is { Count: > 0 })
+                        return db;
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.Error("[KappaTracker] Failed to load locale DB", ex);
+            }
+
+            return new Dictionary<string, string>();
+        }
+    }
+}
