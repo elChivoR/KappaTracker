@@ -36,19 +36,18 @@ namespace KappaTracker.Services
 
             void Visit(string id)
             {
-                if (state.TryGetValue(id, out var s))
-                {
-                    // s == 1 => cycle back-edge: ignore. s == 2 => already emitted.
-                    return;
-                }
+                if (state.ContainsKey(id))
+                    return; // visiting or done -> skip (cycle back-edge or already emitted)
+
                 state[id] = 1;
-                if (graph.TryGetValue(id, out var node))
+                bool known = graph.TryGetValue(id, out var node);
+                if (known)
                 {
-                    foreach (var prereq in node.PrereqIds)
+                    foreach (var prereq in node!.PrereqIds)
                         Visit(prereq);
                 }
                 state[id] = 2;
-                if (id != questId)
+                if (known && id != questId)
                     order.Add(id);
             }
 
