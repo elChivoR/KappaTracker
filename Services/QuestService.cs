@@ -140,6 +140,31 @@ namespace KappaTracker.Services
                 .ToList();
         }
 
+        /// <summary>
+        /// Full detail for an arbitrary quest id (not trader-scoped): English name/description,
+        /// live status for the active profile, hand-in requirements, and its start-gate note.
+        /// Returns null if the id is not in the quest database. PrerequisiteChain is left empty.
+        /// </summary>
+        public QuestViewModel? GetQuestDetail(string questId)
+        {
+            var quest = _questHelper.GetQuestsFromDb().FirstOrDefault(q => (string)q.Id == questId);
+            if (quest is null)
+                return null;
+
+            var player = _profileService.GetActivePlayer();
+            var status = player.QuestStatusById.GetValueOrDefault(questId, KappaQuestStatus.Locked);
+
+            return new QuestViewModel
+            {
+                QuestId = questId,
+                Title = ResolveQuestName(questId, quest),
+                Description = ResolveLocale($"{questId} description"),
+                Status = status,
+                Requirements = BuildRequirements(quest, player, status),
+                GateNote = _questGraph.GetGateNote(questId)
+            };
+        }
+
         private static int SortRank(KappaQuestStatus status) => status switch
         {
             KappaQuestStatus.ReadyToHandIn => 0,

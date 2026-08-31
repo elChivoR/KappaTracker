@@ -7,6 +7,7 @@ namespace KappaTracker.Models
         public string QuestId { get; set; } = string.Empty;
         public string Title { get; set; } = string.Empty;
         public string Description { get; set; } = string.Empty;
+        public string? GateNote { get; set; }
         public KappaQuestStatus Status { get; set; } = KappaQuestStatus.Locked;
         public List<QuestRequirementViewModel> Requirements { get; set; } = new();
 

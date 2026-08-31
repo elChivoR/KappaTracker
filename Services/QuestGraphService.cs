@@ -108,6 +108,10 @@ namespace KappaTracker.Services
             return chain;
         }
 
+        /// <summary>The quest's own non-quest start gate ("Lv N", "LL N Trader"), or null.</summary>
+        public string? GetGateNote(string questId) =>
+            GetGraph().TryGetValue(questId, out var node) ? node.GateNote : null;
+
         private IReadOnlyDictionary<string, QuestGraphNode> GetGraph()
         {
             if (_graph is not null)
