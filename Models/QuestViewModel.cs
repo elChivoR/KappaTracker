@@ -10,6 +10,11 @@ namespace KappaTracker.Models
         public KappaQuestStatus Status { get; set; } = KappaQuestStatus.Locked;
         public List<QuestRequirementViewModel> Requirements { get; set; } = new();
 
+        public List<PrereqNodeViewModel> PrerequisiteChain { get; set; } = new();
+
+        public int PrereqTotal => PrerequisiteChain.Count;
+        public int PrereqCompletedCount => PrerequisiteChain.Count(n => n.IsDone);
+
         public bool IsCompleted => Status == KappaQuestStatus.Completed;
         public bool IsActive => Status is KappaQuestStatus.InProgress or KappaQuestStatus.ReadyToHandIn;
     }
