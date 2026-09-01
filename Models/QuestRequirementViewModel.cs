@@ -42,13 +42,18 @@ namespace KappaTracker.Models
         /// <summary>
         /// Numerator to show. Prefers real objective progress; for item conditions with
         /// no partial-progress counter it falls back to how many are held right now, so
-        /// the "you have enough, go turn it in" hint still works.
+        /// the "you have enough, go turn it in" hint still works. Never exceeds the goal.
         /// </summary>
-        public int DisplayCurrent =>
-            IsMet ? DisplayTarget
-            : CurrentCount > 0 ? CurrentCount
-            : IsItem ? OwnedCount
-            : 0;
+        public int DisplayCurrent
+        {
+            get
+            {
+                if (IsMet)
+                    return DisplayTarget;
+                var raw = CurrentCount > 0 ? CurrentCount : IsItem ? OwnedCount : 0;
+                return DisplayTarget > 0 && raw > DisplayTarget ? DisplayTarget : raw;
+            }
+        }
 
         /// <summary>This row has a meaningful X / Y counter worth rendering.</summary>
         public bool ShowCounter => IsItem || (Type == "CounterCreator" && DisplayTarget > 1);

@@ -16,6 +16,13 @@ namespace KappaTracker.Models
         public int PrereqTotal => PrerequisiteChain.Count;
         public int PrereqCompletedCount => PrerequisiteChain.Count(n => n.GateSatisfied);
 
+        /// <summary>
+        /// Requirements that are done, or already covered by items on hand. This is the
+        /// "how many of these can I satisfy right now" tally in the panel header, so it
+        /// counts stash readiness even for quests that haven't been started yet.
+        /// </summary>
+        public int ReadyRequirementCount => Requirements.Count(r => r.IsMet || r.IsEnough);
+
         public bool IsCompleted => Status == KappaQuestStatus.Completed;
         public bool IsActive => Status is KappaQuestStatus.InProgress or KappaQuestStatus.ReadyToHandIn;
     }
