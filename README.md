@@ -36,9 +36,17 @@
 
 ## Browsing quest details
 
-<video src="https://github.com/elChivoR/KappaTracker/raw/main/docs/media/quest-details.mp4" controls muted playsinline width="900"></video>
+▶️ **[Watch the walkthrough](docs/media/quest-details.mp4)** — opens the recording in GitHub's player.
 
-*(If the video does not play inline, [download / open it here](docs/media/quest-details.mp4).)*
+<!--
+  To embed this video inline instead of as a link:
+    1. Open  https://github.com/elChivoR/KappaTracker/edit/main/README.md
+    2. Drag  docs/media/quest-details.mp4  (from your local clone) into the editor, right here.
+    3. GitHub uploads it and drops in a line like
+       https://github.com/elChivoR/KappaTracker/assets/XXXXXXXX/....
+    4. Delete the "Watch the walkthrough" line above; keep the assets line; commit.
+-->
+
 
 ---
 
