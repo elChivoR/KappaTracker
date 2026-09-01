@@ -127,6 +127,7 @@ namespace KappaTracker.Services
                     QuestId = questId,
                     Title = ResolveQuestName(questId, quest),
                     Description = ResolveLocale($"{questId} description"),
+                    Map = ResolveMapName(quest.Location),
                     Status = status,
                     Requirements = BuildRequirements(quest, player, status),
                     PrerequisiteChain = includeChain ? BuildChain(questId, kappaIds, player) : new()
@@ -159,6 +160,7 @@ namespace KappaTracker.Services
                 QuestId = questId,
                 Title = ResolveQuestName(questId, quest),
                 Description = ResolveLocale($"{questId} description"),
+                Map = ResolveMapName(quest.Location),
                 Status = status,
                 Requirements = BuildRequirements(quest, player, status),
                 GateNote = _questGraph.GetGateNote(questId)
@@ -331,6 +333,20 @@ namespace KappaTracker.Services
             return string.IsNullOrWhiteSpace(quest.QuestName)
                 ? quest.Name ?? questId
                 : quest.QuestName;
+        }
+
+        /// <summary>
+        /// Turns a quest's raw <c>Location</c> (a map template id, or "any") into a
+        /// display name via the locale DB. Empty string when the quest isn't tied to
+        /// a specific map.
+        /// </summary>
+        private string ResolveMapName(string? location)
+        {
+            if (string.IsNullOrWhiteSpace(location) ||
+                location.Equals("any", StringComparison.OrdinalIgnoreCase))
+                return string.Empty;
+
+            return ResolveLocale($"{location} Name");
         }
 
         private string ResolveLocale(string key)

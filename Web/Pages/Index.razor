@@ -93,8 +93,38 @@
                 }
                 else
                 {
+                    var shown = FilteredQuests;
+
+                    <div class="kappa-filters">
+                        <MudTextField @bind-Value="filterText" T="string" Immediate="true" DebounceInterval="150"
+                                      Label="Search" Placeholder="Name or objective…" Clearable="true"
+                                      Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search"
+                                      Variant="Variant.Outlined" Margin="Margin.Dense" Class="kappa-filter-text" />
+                        <MudSelect @bind-Value="filterMap" T="string" Label="Map" Dense="true" Clearable="true"
+                                   Variant="Variant.Outlined" Margin="Margin.Dense" Class="kappa-filter-select">
+                            <MudSelectItem T="string" Value="@("")">All maps</MudSelectItem>
+                            @foreach (var m in AvailableMaps)
+                            {
+                                <MudSelectItem T="string" Value="@m">@m</MudSelectItem>
+                            }
+                        </MudSelect>
+                        <MudSelect @bind-Value="filterStatus" T="string" Label="Status" Dense="true"
+                                   Variant="Variant.Outlined" Margin="Margin.Dense" Class="kappa-filter-select">
+                            @foreach (var opt in StatusFilterOptions)
+                            {
+                                <MudSelectItem T="string" Value="@opt.Key">@opt.Label</MudSelectItem>
+                            }
+                        </MudSelect>
+                    </div>
+
+                    @if (shown.Count == 0)
+                    {
+                        <MudText Class="spt-muted">No quests match the filter.</MudText>
+                    }
+                    else
+                    {
                     <MudExpansionPanels MultiExpansion="true" Elevation="0" Class="kappa-quests" @key="selectedTraderId">
-                        @foreach (var q in quests)
+                        @foreach (var q in shown)
                         {
                             var readyCount = q.ReadyRequirementCount;
                             <MudExpansionPanel @key="q.QuestId" Class="@($"kappa-quest kappa-quest--{q.Status.ToString().ToLowerInvariant()}")">
@@ -166,6 +196,7 @@
                             </MudExpansionPanel>
                         }
                     </MudExpansionPanels>
+                    }
                 }
             }
         </MudPaper>
@@ -185,6 +216,72 @@
     private readonly HashSet<string> chainOpen = new();
 
     private QuestViewModel? modalQuest;
+
+    // ----- quest filters (reset when the trader changes) -----
+    private string filterText = "";
+    private string filterMap = "";
+    private string filterStatus = "";
+
+    private static readonly (string Key, string Label)[] StatusFilterOptions =
+    {
+        ("", "All statuses"),
+        ("actionable", "Actionable"),
+        ("inprogress", "In progress"),
+        ("readytohandin", "Turn in"),
+        ("available", "Available"),
+        ("locked", "Locked"),
+        ("completed", "Completed"),
+        ("failed", "Failed"),
+    };
+
+    private IEnumerable<string> AvailableMaps =>
+        quests is null
+            ? Enumerable.Empty<string>()
+            : quests.Where(q => !string.IsNullOrEmpty(q.Map))
+                    .Select(q => q.Map)
+                    .Distinct()
+                    .OrderBy(m => m, StringComparer.OrdinalIgnoreCase);
+
+    private List<QuestViewModel> FilteredQuests
+    {
+        get
+        {
+            if (quests is null)
+                return new();
+
+            IEnumerable<QuestViewModel> result = quests;
+
+            var text = filterText?.Trim();
+            if (!string.IsNullOrEmpty(text))
+            {
+                result = result.Where(q =>
+                    q.Title.Contains(text, StringComparison.OrdinalIgnoreCase)
+                    || q.Requirements.Any(r =>
+                        (!string.IsNullOrEmpty(r.Description) && r.Description.Contains(text, StringComparison.OrdinalIgnoreCase))
+                        || (!string.IsNullOrEmpty(r.ItemName) && r.ItemName.Contains(text, StringComparison.OrdinalIgnoreCase))));
+            }
+
+            if (!string.IsNullOrEmpty(filterMap))
+                result = result.Where(q => q.Map == filterMap);
+
+            if (!string.IsNullOrEmpty(filterStatus))
+                result = result.Where(q => MatchesStatusFilter(q.Status, filterStatus));
+
+            return result.ToList();
+        }
+    }
+
+    private static bool MatchesStatusFilter(KappaQuestStatus s, string filter) => filter switch
+    {
+        "actionable" => s is KappaQuestStatus.InProgress or KappaQuestStatus.ReadyToHandIn or KappaQuestStatus.Available,
+        "inprogress" => s == KappaQuestStatus.InProgress,
+        "readytohandin" => s == KappaQuestStatus.ReadyToHandIn,
+        "available" => s == KappaQuestStatus.Available,
+        "locked" => s == KappaQuestStatus.Locked,
+        "completed" => s == KappaQuestStatus.Completed,
+        "failed" => s == KappaQuestStatus.Failed,
+        _ => true
+    };
 
     private void OpenQuestModal(string questId)
     {
@@ -251,6 +348,9 @@
         selectedTraderId = traderId;
         chainOpen.Clear();
         modalQuest = null;
+        filterText = "";
+        filterMap = "";
+        filterStatus = "";
         currentTrader = traders?.FirstOrDefault(t => t.TraderId == traderId);
         try
         {

@@ -148,6 +148,24 @@
     text-align: center;
 }
 
+/* ---------- quest filters ---------- */
+
+.kappa-filters {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-start;
+    gap: 10px;
+    margin-bottom: 14px;
+}
+
+.kappa-filter-text {
+    flex: 1 1 240px;
+}
+
+.kappa-filter-select {
+    flex: 0 1 190px;
+}
+
 /* ---------- quest list ---------- */
 
 .kappa-quests {

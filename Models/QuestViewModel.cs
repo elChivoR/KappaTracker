@@ -8,6 +8,10 @@ namespace KappaTracker.Models
         public string Title { get; set; } = string.Empty;
         public string Description { get; set; } = string.Empty;
         public string? GateNote { get; set; }
+
+        /// <summary>Resolved map name for this quest (e.g. "Customs"); empty when not map-specific.</summary>
+        public string Map { get; set; } = string.Empty;
+
         public KappaQuestStatus Status { get; set; } = KappaQuestStatus.Locked;
         public List<QuestRequirementViewModel> Requirements { get; set; } = new();
 
