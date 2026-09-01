@@ -18,6 +18,12 @@ namespace KappaTracker.Models
         /// <summary>questId -&gt; set of condition ids already satisfied for that quest.</summary>
         public Dictionary<string, HashSet<string>> CompletedConditionsByQuest { get; set; } = new();
 
+        /// <summary>
+        /// condition id -&gt; live progress count from the profile's task counters
+        /// (e.g. ration packs handed over so far, Scavs eliminated so far).
+        /// </summary>
+        public Dictionary<string, int> ConditionProgressById { get; set; } = new();
+
         /// <summary>item tpl -&gt; total quantity held anywhere in the profile.</summary>
         public Dictionary<string, int> InventoryCounts { get; set; } = new();
 

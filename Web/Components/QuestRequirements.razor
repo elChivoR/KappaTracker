@@ -35,10 +35,10 @@ else
                 <span class="kappa-req-text">
                     @(string.IsNullOrWhiteSpace(r.Description) ? r.Type : r.Description)
                 </span>
-                @if (r.IsItem)
+                @if (r.ShowCounter)
                 {
-                    <span class="kappa-req-count @(r.IsMet || r.HasEnoughItems ? "is-enough" : "")">
-                        @(r.IsMet ? r.RequiredCount : r.OwnedCount) / @r.RequiredCount@(r.FoundInRaidRequired ? " FiR" : "")
+                    <span class="kappa-req-count @(r.IsEnough ? "is-enough" : "")">
+                        @r.DisplayCurrent / @r.DisplayTarget@(r.FoundInRaidRequired ? " FiR" : "")
                     </span>
                 }
             </div>

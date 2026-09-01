@@ -203,6 +203,14 @@ namespace KappaTracker.Services
                     IsMet = questDone || (doneConditions?.Contains(conditionId) ?? false)
                 };
 
+                // Objective progress for any counted condition (hand-over, kills, ...).
+                row.TargetCount = (int)(cond.Value ?? 0);
+                row.CurrentCount = row.IsMet
+                    ? row.TargetCount
+                    : player.ConditionProgressById.GetValueOrDefault(conditionId);
+                if (row.TargetCount > 0 && row.CurrentCount > row.TargetCount)
+                    row.CurrentCount = row.TargetCount;
+
                 if (type is "HandoverItem" or "FindItem")
                 {
                     // A condition can list many interchangeable tpls (e.g. every BEAR

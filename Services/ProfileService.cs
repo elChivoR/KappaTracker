@@ -50,6 +50,17 @@ namespace KappaTracker.Services
                         completedConditions[questId] = new HashSet<string>(quest.CompletedConditions);
                 }
 
+                // Partial objective progress: ration packs handed so far, Scavs killed
+                // so far, etc. Keyed by the counter's own condition id (robust to the
+                // dictionary key convention).
+                var conditionProgress = new Dictionary<string, int>();
+                foreach (var (_, counter) in pmc.TaskConditionCounters ?? [])
+                {
+                    if (counter?.Id is null || counter.Value is not { } value || value <= 0)
+                        continue;
+                    conditionProgress[(string)counter.Id] = (int)value;
+                }
+
                 var loyalty = new Dictionary<string, int>();
                 foreach (var (traderId, info) in pmc.TradersInfo ?? [])
                     loyalty[traderId] = info.LoyaltyLevel ?? 1;
@@ -72,6 +83,7 @@ namespace KappaTracker.Services
                     CompletedQuestIds = completedQuests,
                     QuestStatusById = statusById,
                     CompletedConditionsByQuest = completedConditions,
+                    ConditionProgressById = conditionProgress,
                     TraderLoyalty = loyalty,
                     InventoryCounts = counts,
                     InventoryFirCounts = firCounts
