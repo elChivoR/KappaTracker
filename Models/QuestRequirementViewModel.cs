@@ -51,7 +51,7 @@ namespace KappaTracker.Models
             : 0;
 
         /// <summary>This row has a meaningful X / Y counter worth rendering.</summary>
-        public bool ShowCounter => DisplayTarget > 1 || IsItem;
+        public bool ShowCounter => IsItem || (Type == "CounterCreator" && DisplayTarget > 1);
 
         /// <summary>Objective is done, or progress plus what's held now covers the goal.</summary>
         public bool IsEnough => IsMet || (DisplayTarget > 0 && CurrentCount + OwnedCount >= DisplayTarget);
