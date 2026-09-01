@@ -35,18 +35,7 @@
   **in memory only**. Nothing is ever written into your mod folder.
 
 ## Browsing quest details
-
-▶️ **[Watch the walkthrough](docs/media/quest-details.mp4)** — opens the recording in GitHub's player.
-
-<!--
-  To embed this video inline instead of as a link:
-    1. Open  https://github.com/elChivoR/KappaTracker/edit/main/README.md
-    2. Drag  docs/media/quest-details.mp4  (from your local clone) into the editor, right here.
-    3. GitHub uploads it and drops in a line like
-       https://github.com/elChivoR/KappaTracker/assets/XXXXXXXX/....
-    4. Delete the "Watch the walkthrough" line above; keep the assets line; commit.
--->
-
+https://github.com/user-attachments/assets/9cceeba7-cc8a-4027-bb74-b5107725b977
 
 ---
 
