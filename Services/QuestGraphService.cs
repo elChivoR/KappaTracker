@@ -18,7 +18,8 @@ namespace KappaTracker.Services
         IReadOnlyList<string> PrereqIds,
         string? GateNote,
         string? QuestName,
-        IReadOnlyCollection<KappaQuestStatus> SatisfyingStatuses);
+        IReadOnlyCollection<KappaQuestStatus> SatisfyingStatuses,
+        IReadOnlyCollection<string> MutuallyExclusiveQuestIds);
 
     [Injectable(InjectionType.Singleton)]
     public class QuestGraphService
@@ -112,6 +113,16 @@ namespace KappaTracker.Services
         public string? GetGateNote(string questId) =>
             GetGraph().TryGetValue(questId, out var node) ? node.GateNote : null;
 
+        /// <summary>
+        /// Quest ids that auto-fail <paramref name="questId"/> once completed — the other
+        /// side of a mutually exclusive route, e.g. Therapist's "Out of Curiosity" for
+        /// Skier's "Chemical - Part 4". Empty when the quest has no alternative route.
+        /// </summary>
+        public IReadOnlyCollection<string> GetMutuallyExclusiveQuestIds(string questId) =>
+            GetGraph().TryGetValue(questId, out var node)
+                ? node.MutuallyExclusiveQuestIds
+                : Array.Empty<string>();
+
         private IReadOnlyDictionary<string, QuestGraphNode> GetGraph()
         {
             if (_graph is not null)
@@ -128,6 +139,7 @@ namespace KappaTracker.Services
             var gatesByQuest = new Dictionary<string, List<string>>();
             var nameByQuest = new Dictionary<string, string?>();
             var satisfyingByQuest = new Dictionary<string, HashSet<KappaQuestStatus>>();
+            var mutexByQuest = new Dictionary<string, HashSet<string>>();
 
             var quests = _questHelper.GetQuestsFromDb();
 
@@ -175,6 +187,25 @@ namespace KappaTracker.Services
                             break;
                     }
                 }
+
+                // Fail conditions of the form "when quest X is completed, this quest
+                // fails" mark X as a mutually exclusive route (e.g. finishing Therapist's
+                // "Out of Curiosity" fails Skier's "Chemical - Part 4").
+                foreach (var cond in quest.Conditions?.Fail ?? [])
+                {
+                    var type = !string.IsNullOrWhiteSpace(cond.ConditionType)
+                        ? cond.ConditionType!
+                        : cond.Type ?? string.Empty;
+                    if (type != "Quest")
+                        continue;
+                    if (!MapConditionStatuses(cond.Status).Contains(KappaQuestStatus.Completed))
+                        continue;
+
+                    var mutex = mutexByQuest.TryGetValue(id, out var ms)
+                        ? ms : (mutexByQuest[id] = new());
+                    foreach (var target in ReadTargets(cond.Target))
+                        mutex.Add(target);
+                }
             }
 
             var graph = new Dictionary<string, QuestGraphNode>(prereqsByQuest.Count);
@@ -183,12 +214,16 @@ namespace KappaTracker.Services
                 var gates = gatesByQuest[id];
                 satisfyingByQuest.TryGetValue(id, out var satRaw);
                 var satisfying = NormalizeSatisfying(satRaw);
+                var mutex = mutexByQuest.TryGetValue(id, out var mx)
+                    ? (IReadOnlyCollection<string>)mx.ToArray()
+                    : Array.Empty<string>();
                 graph[id] = new QuestGraphNode(
                     id,
                     prereqs,
                     gates.Count > 0 ? string.Join(" · ", gates.Distinct()) : null,
                     nameByQuest.GetValueOrDefault(id),
-                    satisfying);
+                    satisfying,
+                    mutex);
             }
 
             _logger.Success($"[KappaTracker] Prereq graph built: {graph.Count} quests");

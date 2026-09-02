@@ -13,6 +13,15 @@ namespace KappaTracker.Models
         public string Map { get; set; } = string.Empty;
 
         public KappaQuestStatus Status { get; set; } = KappaQuestStatus.Locked;
+
+        /// <summary>
+        /// Set when this quest is failed on paper but the requirement is already met
+        /// through a mutually exclusive route the player took instead (e.g. "Chemical -
+        /// Part 4" satisfied by finishing "Out of Curiosity"). Holds the alternative's
+        /// name; <see cref="Status"/> is reported as <see cref="KappaQuestStatus.Completed"/>.
+        /// </summary>
+        public string? SatisfiedViaAlternativeTitle { get; set; }
+
         public List<QuestRequirementViewModel> Requirements { get; set; } = new();
 
         public List<PrereqNodeViewModel> PrerequisiteChain { get; set; } = new();

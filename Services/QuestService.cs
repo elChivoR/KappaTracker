@@ -121,7 +121,8 @@ namespace KappaTracker.Services
                 if (!kappaIds.Contains(questId) || (string)quest.TraderId != traderId)
                     continue;
 
-                var status = player.QuestStatusById.GetValueOrDefault(questId, KappaQuestStatus.Locked);
+                var rawStatus = player.QuestStatusById.GetValueOrDefault(questId, KappaQuestStatus.Locked);
+                var (status, viaAlt) = ResolveAlternativeRoute(questId, rawStatus, player);
                 quests.Add(new QuestViewModel
                 {
                     QuestId = questId,
@@ -129,6 +130,7 @@ namespace KappaTracker.Services
                     Description = ResolveLocale($"{questId} description"),
                     Map = ResolveMapName(quest.Location),
                     Status = status,
+                    SatisfiedViaAlternativeTitle = viaAlt,
                     Requirements = BuildRequirements(quest, player, status),
                     PrerequisiteChain = includeChain ? BuildChain(questId, kappaIds, player) : new()
                 });
@@ -153,7 +155,8 @@ namespace KappaTracker.Services
                 return null;
 
             var player = _profileService.GetActivePlayer();
-            var status = player.QuestStatusById.GetValueOrDefault(questId, KappaQuestStatus.Locked);
+            var rawStatus = player.QuestStatusById.GetValueOrDefault(questId, KappaQuestStatus.Locked);
+            var (status, viaAlt) = ResolveAlternativeRoute(questId, rawStatus, player);
 
             return new QuestViewModel
             {
@@ -162,9 +165,34 @@ namespace KappaTracker.Services
                 Description = ResolveLocale($"{questId} description"),
                 Map = ResolveMapName(quest.Location),
                 Status = status,
+                SatisfiedViaAlternativeTitle = viaAlt,
                 Requirements = BuildRequirements(quest, player, status),
                 GateNote = _questGraph.GetGateNote(questId)
             };
+        }
+
+        /// <summary>
+        /// A Kappa quest that reads as <see cref="KappaQuestStatus.Failed"/> only because
+        /// the player committed to a mutually exclusive route still counts as done:
+        /// resolve it to <see cref="KappaQuestStatus.Completed"/> and report the quest
+        /// that satisfied it. Any other status is returned unchanged.
+        /// </summary>
+        private (KappaQuestStatus Status, string? ViaTitle) ResolveAlternativeRoute(
+            string questId, KappaQuestStatus status, PlayerProgress player)
+        {
+            if (status != KappaQuestStatus.Failed)
+                return (status, null);
+
+            foreach (var altId in _questGraph.GetMutuallyExclusiveQuestIds(questId))
+            {
+                if (!player.CompletedQuestIds.Contains(altId))
+                    continue;
+
+                var name = ResolveLocale($"{altId} name");
+                return (KappaQuestStatus.Completed, string.IsNullOrWhiteSpace(name) ? altId : name);
+            }
+
+            return (status, null);
         }
 
         private static int SortRank(KappaQuestStatus status) => status switch

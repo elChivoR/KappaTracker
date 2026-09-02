@@ -133,6 +133,10 @@
                                         <MudIcon Size="Size.Small" Icon="@StatusIcon(q.Status)" Color="@StatusColor(q.Status)" />
                                         <span class="kappa-quest-name">@q.Title</span>
                                         <span class="@($"kappa-status kappa-status--{q.Status.ToString().ToLowerInvariant()}")">@StatusLabel(q.Status)</span>
+                                        @if (!string.IsNullOrWhiteSpace(q.SatisfiedViaAlternativeTitle))
+                                        {
+                                            <span class="kappa-quest-alt" title="@($"Satisfied by completing \"{q.SatisfiedViaAlternativeTitle}\"")">via @q.SatisfiedViaAlternativeTitle</span>
+                                        }
                                         @if (q.Requirements.Count > 0)
                                         {
                                             <span class="kappa-quest-count @(readyCount == q.Requirements.Count ? "is-full" : "")">

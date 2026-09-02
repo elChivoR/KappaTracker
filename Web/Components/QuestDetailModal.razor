@@ -9,6 +9,10 @@
                 <span class="@($"kappa-status kappa-status--{Quest.Status.ToString().ToLowerInvariant()}")">
                     @StatusLabel(Quest.Status)
                 </span>
+                @if (!string.IsNullOrWhiteSpace(Quest.SatisfiedViaAlternativeTitle))
+                {
+                    <span class="kappa-quest-alt">via @Quest.SatisfiedViaAlternativeTitle</span>
+                }
                 <button type="button" class="kappa-modal-close" aria-label="Close" @onclick="Close">&times;</button>
             </div>
             <div class="kappa-modal-body">
@@ -21,6 +25,12 @@
                     <div class="kappa-modal-gate">
                         <span class="kappa-chain-gate">@Quest.GateNote</span>
                         <span class="spt-muted">required to start</span>
+                    </div>
+                }
+                @if (!string.IsNullOrWhiteSpace(Quest.SatisfiedViaAlternativeTitle))
+                {
+                    <div class="kappa-modal-gate">
+                        <span class="spt-muted">Counts as done — you took the alternative route: <strong>@Quest.SatisfiedViaAlternativeTitle</strong></span>
                     </div>
                 }
                 <QuestRequirements Requirements="Quest.Requirements" />
