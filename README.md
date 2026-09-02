@@ -2,9 +2,10 @@
 
 > A SPT server mod that adds a `/kappa` dashboard to the SPT web UI for tracking your
 > progress toward the **Kappa** secure container — every milestone quest, its
-> requirements, and the full chain of quests you still need to unlock it.
+> requirements, and the full chain of quests you still need to unlock it — plus a
+> companion BepInEx plugin that tags those quests inside the game's own task UI.
 
-![Version](https://img.shields.io/badge/version-1.0.1-e6a23c)
+![Version](https://img.shields.io/badge/version-1.1.0-e6a23c)
 ![SPT](https://img.shields.io/badge/SPT-4.1.x-blue)
 ![License](https://img.shields.io/badge/license-MIT-green)
 
@@ -33,6 +34,12 @@
 - **Auto-sync** — the whole dashboard refreshes every 5 seconds; no manual reload.
 - **No footprint** — item icons are fetched once from `assets.tarkov.dev` and kept
   **in memory only**. Nothing is ever written into your mod folder.
+- **In-game Kappa tags** — a companion BepInEx plugin prefixes `KAPPA · ` to every
+  milestone quest in the game's own task UI: the Tasks screen, the trader task list
+  and the quest detail header. Each surface is toggled individually in
+  `BepInEx/config/com.elchivor.kappatracker.client.cfg`. (An in-raid HUD toggle is
+  present but off by default — EFT has no separate in-raid task tracker to hook, and
+  the in-raid Tasks screen is the same list that's already tagged.)
 
 ## Browsing quest details
 https://github.com/user-attachments/assets/9cceeba7-cc8a-4027-bb74-b5107725b977
@@ -43,21 +50,27 @@ https://github.com/user-attachments/assets/9cceeba7-cc8a-4027-bb74-b5107725b977
 
 1. Download `KappaTracker.zip` from the [latest release](https://github.com/elChivoR/KappaTracker/releases/latest).
 2. Extract it into your **SPT root** (the folder that contains `SPT_Runtime/`). The
-   archive already has the right layout:
+   archive already has the right layout, with `BepInEx/` a sibling of `SPT_Runtime/`:
    ```
    SPT_Runtime/
-     user/
-       mods/
-         KappaTracker/
-           KappaTracker.dll
-           wwwroot/
+     user/mods/KappaTracker/
+       KappaTracker.dll
+       wwwroot/
+   BepInEx/
+     plugins/KappaTracker/
+       KappaTracker.Client.dll
    ```
+   `KappaTracker.Client.dll` is the in-game tag plugin. It reads the milestone list
+   from the running server mod over `/kappa/api/milestones`; with the server stopped
+   it simply does nothing.
 3. Start the SPT server.
 4. Open the SPT web dashboard and pick **Kappa Tracker** from the mod list
    (or go straight to `/kappa`).
 
-**Requirements:** SPT `4.1.x`. An internet connection is used only to fetch item
-icons; the mod works offline without them.
+**Requirements:** SPT `4.1.x`. The tag plugin runs on BepInEx (already required by
+SPT) and needs the server mod running to know which quests are milestones. An
+internet connection is used only to fetch item icons; the mod works offline without
+them.
 
 ---
 

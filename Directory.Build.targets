@@ -20,7 +20,8 @@
              Properties="Configuration=$(Configuration)" Targets="Build" />
     <RemoveDir Directories="$(_StageDir)" />
     <ItemGroup>
-      <_RuntimeFiles Include="$(_RuntimeDir)\**\*" />
+      <_RuntimeFiles Include="$(_RuntimeDir)\**\*"
+                     Exclude="$(_RuntimeDir)\**\*.pdb;$(_RuntimeDir)\**\*.deps.json;$(_RuntimeDir)\**\*.staticwebassets.*.json" />
       <_BepInExFiles Include="$(_BepInExDir)\**\*" />
     </ItemGroup>
     <Copy SourceFiles="@(_RuntimeFiles)"
