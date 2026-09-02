@@ -12,58 +12,47 @@
          both trees at the archive root (see its PackageSptRuntime target). -->
     <OutputPath>$(MSBuildThisFileDirectory)..\bin\$(Configuration)\BepInEx\plugins\KappaTracker\</OutputPath>
     <EnableDefaultCompileItems>true</EnableDefaultCompileItems>
-    <EftManaged Condition="'$(EFT_MANAGED)' != ''">$(EFT_MANAGED)</EftManaged>
-    <EftManaged Condition="'$(EftManaged)' == ''">$(MSBuildThisFileDirectory)refs</EftManaged>
+    <!-- $(SptRoot) is resolved in the repo-root Directory.Build.props from the SPT_ROOT env
+         var or a git-ignored KappaTracker.Client.props.user. The game assemblies are
+         referenced in place — nothing is copied into the repo. -->
+    <SptManagedDir>$(SptRoot)\EscapeFromTarkov_Data\Managed</SptManagedDir>
+    <SptPluginsDir>$(SptRoot)\BepInEx\plugins\spt</SptPluginsDir>
   </PropertyGroup>
 
   <ItemGroup>
+    <!-- BepInEx + HarmonyX come from the BepInEx NuGet feed (see repo-root NuGet.Config),
+         not the game folder. ExcludeAssets="runtime" keeps the compile-time reference but
+         stops BepInEx.dll / 0Harmony.dll from being copied into the plugin output. -->
+    <PackageReference Include="BepInEx.Core" Version="5.*" ExcludeAssets="runtime" />
     <PackageReference Include="Microsoft.NETFramework.ReferenceAssemblies" Version="1.0.3" PrivateAssets="all" />
   </ItemGroup>
 
   <ItemGroup>
     <Compile Include="..\Shared\ModInfo.cs" Link="ModInfo.cs" />
-    <!-- The test project lives in a subfolder; keep its sources and the non-redistributable
-         reference DLLs out of every default glob so $(EftManaged) is the only resolution path. -->
+    <!-- The test project lives in a subfolder; keep its sources out of the default glob. -->
     <Compile Remove="KappaTracker.Client.Tests\**\*.cs" />
-    <Compile Remove="refs\**\*.cs" />
-    <None Remove="refs\**" />
-    <Content Remove="refs\**" />
     <None Remove="KappaTracker.Client.Tests\**" />
     <Content Remove="KappaTracker.Client.Tests\**" />
   </ItemGroup>
 
   <ItemGroup>
-    <Reference Include="BepInEx">
-      <HintPath>$(EftManaged)\BepInEx.dll</HintPath>
-      <Private>false</Private>
+    <Reference Include="Assembly-CSharp" Private="false">
+      <HintPath>$(SptManagedDir)\Assembly-CSharp.dll</HintPath>
     </Reference>
-    <Reference Include="0Harmony">
-      <HintPath>$(EftManaged)\0Harmony.dll</HintPath>
-      <Private>false</Private>
+    <Reference Include="Newtonsoft.Json" Private="false">
+      <HintPath>$(SptManagedDir)\Newtonsoft.Json.dll</HintPath>
     </Reference>
-    <Reference Include="Assembly-CSharp">
-      <HintPath>$(EftManaged)\Assembly-CSharp.dll</HintPath>
-      <Private>false</Private>
+    <Reference Include="UnityEngine" Private="false">
+      <HintPath>$(SptManagedDir)\UnityEngine.dll</HintPath>
     </Reference>
-    <Reference Include="Newtonsoft.Json">
-      <HintPath>$(EftManaged)\Newtonsoft.Json.dll</HintPath>
-      <Private>false</Private>
+    <Reference Include="UnityEngine.CoreModule" Private="false">
+      <HintPath>$(SptManagedDir)\UnityEngine.CoreModule.dll</HintPath>
     </Reference>
-    <Reference Include="spt-common">
-      <HintPath>$(EftManaged)\spt-common.dll</HintPath>
-      <Private>false</Private>
+    <Reference Include="Unity.TextMeshPro" Private="false">
+      <HintPath>$(SptManagedDir)\Unity.TextMeshPro.dll</HintPath>
     </Reference>
-    <Reference Include="UnityEngine">
-      <HintPath>$(EftManaged)\UnityEngine.dll</HintPath>
-      <Private>false</Private>
-    </Reference>
-    <Reference Include="UnityEngine.CoreModule">
-      <HintPath>$(EftManaged)\UnityEngine.CoreModule.dll</HintPath>
-      <Private>false</Private>
-    </Reference>
-    <Reference Include="Unity.TextMeshPro">
-      <HintPath>$(EftManaged)\Unity.TextMeshPro.dll</HintPath>
-      <Private>false</Private>
+    <Reference Include="spt-common" Private="false">
+      <HintPath>$(SptPluginsDir)\spt-common.dll</HintPath>
     </Reference>
   </ItemGroup>
 </Project>

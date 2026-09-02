@@ -1,0 +1,19 @@
+<Project>
+  <PropertyGroup>
+    <!-- SPT install root. Only needed to build the in-game client plugin
+         (client/KappaTracker.Client.csproj) against the non-redistributable EFT / SPT
+         game assemblies — the server mod and its tests never look at this.
+
+         Set it one of two ways:
+           * the SPT_ROOT environment variable, or
+           * a git-ignored client/KappaTracker.Client.props.user
+             (copy KappaTracker.Client.props.user.example)
+
+         With neither set, the client plugin is skipped and only the server mod builds
+         (see Directory.Build.targets, _CanBuildClient). -->
+    <SptRoot Condition="'$(SptRoot)' == '' and '$(SPT_ROOT)' != ''">$(SPT_ROOT)</SptRoot>
+  </PropertyGroup>
+
+  <Import Project="$(MSBuildThisFileDirectory)client\KappaTracker.Client.props.user"
+          Condition="'$(SptRoot)' == '' and Exists('$(MSBuildThisFileDirectory)client\KappaTracker.Client.props.user')" />
+</Project>

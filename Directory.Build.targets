@@ -12,11 +12,12 @@
       <_BepInExDir>$(MSBuildThisFileDirectory)bin\$(Configuration)\BepInEx</_BepInExDir>
       <_StageDir>$(MSBuildThisFileDirectory)bin\$(Configuration)\_package</_StageDir>
       <_ZipFile>$(MSBuildThisFileDirectory)bin\$(Configuration)\KappaTracker.zip</_ZipFile>
-      <!-- The client plugin only compiles when the non-redistributable EFT / BepInEx
-           reference assemblies are on hand: either staged into client\refs\ or pointed at
-           by $(EFT_MANAGED). On a plain clone neither is true, so the client build (and its
-           staging below) is skipped and the server mod still builds + zips on its own. -->
-      <_CanBuildClient Condition="Exists('$(MSBuildThisFileDirectory)client\refs\BepInEx.dll') Or '$(EFT_MANAGED)' != ''">true</_CanBuildClient>
+      <!-- The client plugin only compiles when $(SptRoot) (resolved in Directory.Build.props
+           from the SPT_ROOT env var or client\KappaTracker.Client.props.user) points at a
+           real SPT install with the game assemblies. On a plain clone it is unset, so the
+           client build (and its staging below) is skipped and the server mod still builds
+           + zips on its own. -->
+      <_CanBuildClient Condition="'$(SptRoot)' != '' And Exists('$(SptRoot)\EscapeFromTarkov_Data\Managed\Assembly-CSharp.dll')">true</_CanBuildClient>
       <_CanBuildClient Condition="'$(_CanBuildClient)' == ''">false</_CanBuildClient>
     </PropertyGroup>
     <!-- Build the BepInEx client plugin first so its DLL is present in bin\$(Configuration)\BepInEx\
@@ -26,7 +27,7 @@
              Properties="Configuration=$(Configuration)" Targets="Build"
              Condition="'$(_CanBuildClient)' == 'true'" />
     <Message Importance="high" Condition="'$(_CanBuildClient)' != 'true'"
-             Text="[KappaTracker] client plugin skipped: client\refs\BepInEx.dll not found and EFT_MANAGED not set. Server mod only; KappaTracker.zip will not contain BepInEx\plugins\KappaTracker\KappaTracker.Client.dll." />
+             Text="[KappaTracker] client plugin skipped: SptRoot not set (SPT_ROOT env var or client\KappaTracker.Client.props.user). Server mod only; KappaTracker.zip will not contain BepInEx\plugins\KappaTracker\KappaTracker.Client.dll." />
     <RemoveDir Directories="$(_StageDir)" />
     <ItemGroup>
       <_RuntimeFiles Include="$(_RuntimeDir)\**\*"

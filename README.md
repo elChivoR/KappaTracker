@@ -92,12 +92,10 @@ The mod reads the live quest database and your active profile on the server side
 
 ## Building from source
 
-**Requires:** .NET 10 SDK. The companion BepInEx plugin also builds against .NET
-Framework 4.7.2 and links non-redistributable EFT / BepInEx assemblies — reference
-DLLs that are **not** in this repo.
+**Requires:** .NET 10 SDK.
 
-Always build the **server project**, not the solution — the `.sln` also holds the
-client and test projects, which need those reference DLLs to compile:
+Build the **server project**, not the solution — the `.sln` also holds the in-game
+client plugin and its tests, which only build with an SPT install on hand (below):
 
 ```bash
 dotnet build KappaTracker.csproj -c Release
@@ -107,11 +105,22 @@ On a plain clone this builds and zips the server mod alone: the build prints a
 `[KappaTracker] client plugin skipped` notice and `bin/Release/KappaTracker.zip`
 contains only `SPT_Runtime/`.
 
-To also build the in-game plugin into the zip, copy the reference assemblies into
-`client/refs/` (or point the `EFT_MANAGED` environment variable at your EFT
-`EscapeFromTarkov_Data/Managed` folder) and run the same command — the build then
-adds `BepInEx/plugins/KappaTracker/`. See [`client/refs/README.md`](client/refs/README.md)
-for the exact file list.
+### Also building the in-game plugin
+
+The `KappaTracker.Client` plugin targets .NET Framework 4.7.2 and references EFT / SPT
+game assemblies **in place** — nothing is copied into the repo. BepInEx and HarmonyX
+come from the [BepInEx NuGet feed](https://nuget.bepinex.dev) (see `NuGet.Config`).
+
+Point the build at your SPT install root (the folder with `EscapeFromTarkov_Data/` and
+`BepInEx/`) one of two ways:
+
+- set the `SPT_ROOT` environment variable, or
+- copy [`client/KappaTracker.Client.props.user.example`](client/KappaTracker.Client.props.user.example)
+  to `client/KappaTracker.Client.props.user` (git-ignored) and set `<SptRoot>`
+
+then `dotnet build KappaTracker.csproj -c Release` also adds
+`BepInEx/plugins/KappaTracker/` to the zip. `dotnet build KappaTracker.sln` additionally
+builds the xUnit tests for `KappaTagService`.
 
 ---
 

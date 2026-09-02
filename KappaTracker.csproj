@@ -12,6 +12,9 @@
     <Compile Remove="client\**\*.cs" />
     <Content Remove="client\**\*" />
     <None Remove="client\**\*" />
+    <!-- Repo-root NuGet.Config is for restore only; keep it out of the mod output. -->
+    <Content Remove="NuGet.Config" />
+    <None Remove="NuGet.Config" />
   </ItemGroup>
   <ItemGroup>
     <PackageReference Include="SPTushonka.Common" Version="4.1.3" />

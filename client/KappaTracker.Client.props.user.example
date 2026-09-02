@@ -1,0 +1,9 @@
+<Project>
+  <!-- Copy this file to "KappaTracker.Client.props.user" (git-ignored) and point SptRoot
+       at your SPT install root — the folder that contains EscapeFromTarkov_Data\ and
+       BepInEx\. Only needed to build the in-game client plugin.
+       Alternative: set the SPT_ROOT environment variable instead. -->
+  <PropertyGroup>
+    <SptRoot>C:\SPT</SptRoot>
+  </PropertyGroup>
+</Project>
