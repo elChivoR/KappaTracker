@@ -30,7 +30,7 @@ namespace KappaTracker.Client
             catch (Exception ex) { Log.LogError($"KappaTracker: InRaidTracker patch registration failed: {ex}"); }
 
             // One-shot: poll for the session token, then fetch the Kappa milestone id set once.
-            StartCoroutine(BootstrapPatch.Run());
+            StartCoroutine(MilestoneBootstrap.Run());
 
             Log.LogInfo($"KappaTracker.Client {ModInfo.Version} loaded.");
         }

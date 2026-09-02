@@ -21,7 +21,9 @@ namespace KappaTracker.Client
             QuestDetailHeader = cfg.Bind("Surfaces", "QuestDetailHeader", true,
                 "Tag the quest name in the task detail header.");
             InRaidTracker = cfg.Bind("Surfaces", "InRaidTracker", false,
-                "Tag task names in the in-raid objective tracker (HUD). (currently disabled — no in-game hook available)");
+                "Dormant. No in-raid task HUD hook exists in this game build, so this does nothing " +
+                "yet; it stays here as a retry switch for a future build. (In-raid task rows on the " +
+                "notes screen are already tagged via TasksScreen.)");
         }
     }
 }

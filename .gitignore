@@ -28,5 +28,9 @@ icon-cache/
 .DS_Store
 Thumbs.db
 
-# Client plugin reference assemblies (EFT / BepInEx) - never committed
-client/refs/
+# Client plugin reference assemblies (EFT / BepInEx) - never committed.
+# Ignore the contents, not the directory itself, so the .gitkeep placeholder can be
+# re-included (git can't re-include anything inside an excluded directory).
+client/refs/*
+!client/refs/.gitkeep
+!client/refs/README.md

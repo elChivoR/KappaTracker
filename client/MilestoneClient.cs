@@ -22,6 +22,18 @@ namespace KappaTracker.Client
                 }
 
                 var root = JObject.Parse(json);
+
+                // Server sets this when it couldn't derive the Kappa list from the Collector
+                // quest and fell back to returning *every* quest id. Tagging all of them would
+                // be worse than tagging none, so bail.
+                if ((bool?)root["fallback"] == true)
+                {
+                    Plugin.Log.LogWarning(
+                        "KappaTracker: server could not derive the Kappa quest list (fell back to ALL quests); " +
+                        "tags disabled this session.");
+                    return;
+                }
+
                 var ids = root["templateIds"]?.Values<string>()
                               .Where(s => !string.IsNullOrEmpty(s)).Select(s => s!).ToArray()
                           ?? Array.Empty<string>();

@@ -45,10 +45,12 @@ namespace KappaTracker.Web.Controllers
         {
             try
             {
+                var templateIds = _questService.GetKappaQuestIds();
                 return Ok(new
                 {
                     modVersion = ModInfo.Version,
-                    templateIds = _questService.GetKappaQuestIds(),
+                    fallback = _questService.KappaQuestIdsAreFallback,
+                    templateIds,
                 });
             }
             catch (Exception ex)

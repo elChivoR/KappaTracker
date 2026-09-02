@@ -33,7 +33,8 @@
   that quest's description, current status, unlock gate and hand-in requirements.
 - **Auto-sync** — the whole dashboard refreshes every 5 seconds; no manual reload.
 - **No footprint** — item icons are fetched once from `assets.tarkov.dev` and kept
-  **in memory only**. Nothing is ever written into your mod folder.
+  **in memory only**; nothing is written into your mod folder. (The in-game plugin's
+  only file is its BepInEx config.)
 - **In-game Kappa tags** — a companion BepInEx plugin prefixes `KAPPA · ` to every
   milestone quest in the game's own task UI: the Tasks screen, the trader task list
   and the quest detail header. Each surface is toggled individually in
@@ -91,14 +92,26 @@ The mod reads the live quest database and your active profile on the server side
 
 ## Building from source
 
+**Requires:** .NET 10 SDK. The companion BepInEx plugin also builds against .NET
+Framework 4.7.2 and links non-redistributable EFT / BepInEx assemblies — reference
+DLLs that are **not** in this repo.
+
+Always build the **server project**, not the solution — the `.sln` also holds the
+client and test projects, which need those reference DLLs to compile:
+
 ```bash
 dotnet build KappaTracker.csproj -c Release
 ```
 
-This produces `bin/Release/KappaTracker.zip`, packaged with the exact folder layout
-described in *Installation*.
+On a plain clone this builds and zips the server mod alone: the build prints a
+`[KappaTracker] client plugin skipped` notice and `bin/Release/KappaTracker.zip`
+contains only `SPT_Runtime/`.
 
-**Requires:** .NET 10 SDK.
+To also build the in-game plugin into the zip, copy the reference assemblies into
+`client/refs/` (or point the `EFT_MANAGED` environment variable at your EFT
+`EscapeFromTarkov_Data/Managed` folder) and run the same command — the build then
+adds `BepInEx/plugins/KappaTracker/`. See [`client/refs/README.md`](client/refs/README.md)
+for the exact file list.
 
 ---
 

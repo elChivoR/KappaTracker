@@ -19,12 +19,33 @@ namespace KappaTracker.Client
     /// <see cref="MilestoneClient.Fetch"/> is itself idempotent (early-returns when
     /// <see cref="KappaTagService.Ready"/>), so a repeat call is harmless.
     /// </summary>
-    internal static class BootstrapPatch
+    internal static class MilestoneBootstrap
     {
+        /// <summary>
+        /// ~2 minutes of polling at a 1 s cadence. <c>RequestHandler.SessionId</c> is set
+        /// from the <c>-token=</c> launch arg very early in startup, so this ceiling is only
+        /// ever reached on a broken launch (no token) — in which case we give up quietly
+        /// rather than poll forever.
+        /// </summary>
+        private const int MaxAttempts = 120;
+
         public static IEnumerator Run()
         {
+            var attempts = 0;
             while (string.IsNullOrEmpty(RequestHandler.SessionId))
-                yield return new WaitForSeconds(1f);
+            {
+                if (++attempts > MaxAttempts)
+                {
+                    Plugin.Log.LogWarning(
+                        "KappaTracker: session token never appeared after ~2 min; milestone fetch " +
+                        "skipped, tags disabled this session.");
+                    yield break;
+                }
+
+                // Realtime wait: the loading screen pins Time.timeScale to 0, which would
+                // freeze a plain WaitForSeconds indefinitely.
+                yield return new WaitForSecondsRealtime(1f);
+            }
 
             MilestoneClient.Fetch();
         }

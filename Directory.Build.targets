@@ -12,17 +12,28 @@
       <_BepInExDir>$(MSBuildThisFileDirectory)bin\$(Configuration)\BepInEx</_BepInExDir>
       <_StageDir>$(MSBuildThisFileDirectory)bin\$(Configuration)\_package</_StageDir>
       <_ZipFile>$(MSBuildThisFileDirectory)bin\$(Configuration)\KappaTracker.zip</_ZipFile>
+      <!-- The client plugin only compiles when the non-redistributable EFT / BepInEx
+           reference assemblies are on hand: either staged into client\refs\ or pointed at
+           by $(EFT_MANAGED). On a plain clone neither is true, so the client build (and its
+           staging below) is skipped and the server mod still builds + zips on its own. -->
+      <_CanBuildClient Condition="Exists('$(MSBuildThisFileDirectory)client\refs\BepInEx.dll') Or '$(EFT_MANAGED)' != ''">true</_CanBuildClient>
+      <_CanBuildClient Condition="'$(_CanBuildClient)' == ''">false</_CanBuildClient>
     </PropertyGroup>
     <!-- Build the BepInEx client plugin first so its DLL is present in bin\$(Configuration)\BepInEx\
          before this target stages + zips the trees (a ProjectReference from this net10 web
          project to the net472 client is deliberately avoided). -->
     <MSBuild Projects="$(MSBuildThisFileDirectory)client\KappaTracker.Client.csproj"
-             Properties="Configuration=$(Configuration)" Targets="Build" />
+             Properties="Configuration=$(Configuration)" Targets="Build"
+             Condition="'$(_CanBuildClient)' == 'true'" />
+    <Message Importance="high" Condition="'$(_CanBuildClient)' != 'true'"
+             Text="[KappaTracker] client plugin skipped: client\refs\BepInEx.dll not found and EFT_MANAGED not set. Server mod only; KappaTracker.zip will not contain BepInEx\plugins\KappaTracker\KappaTracker.Client.dll." />
     <RemoveDir Directories="$(_StageDir)" />
     <ItemGroup>
       <_RuntimeFiles Include="$(_RuntimeDir)\**\*"
                      Exclude="$(_RuntimeDir)\**\*.pdb;$(_RuntimeDir)\**\*.deps.json;$(_RuntimeDir)\**\*.staticwebassets.*.json" />
-      <_BepInExFiles Include="$(_BepInExDir)\**\*" />
+      <_BepInExFiles Include="$(_BepInExDir)\**\*"
+                     Exclude="$(_BepInExDir)\**\*.pdb"
+                     Condition="'$(_CanBuildClient)' == 'true'" />
     </ItemGroup>
     <Copy SourceFiles="@(_RuntimeFiles)"
           DestinationFiles="@(_RuntimeFiles->'$(_StageDir)\SPT_Runtime\%(RecursiveDir)%(Filename)%(Extension)')"

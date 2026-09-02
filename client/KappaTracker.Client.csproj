@@ -22,7 +22,14 @@
 
   <ItemGroup>
     <Compile Include="..\Shared\ModInfo.cs" Link="ModInfo.cs" />
+    <!-- The test project lives in a subfolder; keep its sources and the non-redistributable
+         reference DLLs out of every default glob so $(EftManaged) is the only resolution path. -->
     <Compile Remove="KappaTracker.Client.Tests\**\*.cs" />
+    <Compile Remove="refs\**\*.cs" />
+    <None Remove="refs\**" />
+    <Content Remove="refs\**" />
+    <None Remove="KappaTracker.Client.Tests\**" />
+    <Content Remove="KappaTracker.Client.Tests\**" />
   </ItemGroup>
 
   <ItemGroup>

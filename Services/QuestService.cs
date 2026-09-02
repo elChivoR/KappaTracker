@@ -24,8 +24,25 @@ namespace KappaTracker.Services
         private readonly QuestGraphService _questGraph;
 
         private HashSet<string>? _kappaQuestIds;
+        private bool _kappaQuestIdsAreFallback;
         private Dictionary<string, string>? _localeCache;
         private string _language = DefaultLanguage;
+
+        /// <summary>
+        /// True when <see cref="GetKappaQuestIds"/> could not derive the list from the
+        /// Collector quest and fell back to returning every quest in the database. Callers
+        /// that tag "Kappa quests" (e.g. the in-game plugin) should treat the set as
+        /// unusable in that case. Only meaningful after <see cref="GetKappaQuestIds"/> has run.
+        /// </summary>
+        public bool KappaQuestIdsAreFallback
+        {
+            get
+            {
+                if (_kappaQuestIds is null)
+                    GetKappaQuestIds();
+                return _kappaQuestIdsAreFallback;
+            }
+        }
 
         /// <summary>
         /// Language used for quest names/descriptions. Defaults to English; set this
@@ -92,11 +109,13 @@ namespace KappaTracker.Services
                 _logger.Warning(
                     "[KappaTracker] Could not derive the Kappa quest list from the Collector quest; " +
                     "falling back to ALL quests");
+                _kappaQuestIdsAreFallback = true;
                 foreach (var quest in allQuests)
                     ids.Add(quest.Id);
             }
             else
             {
+                _kappaQuestIdsAreFallback = false;
                 ids.Add(CollectorQuestId);
             }
 

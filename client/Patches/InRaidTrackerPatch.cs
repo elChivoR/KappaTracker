@@ -51,9 +51,13 @@ namespace KappaTracker.Client
     {
         public static void Patch(Harmony h)
         {
-            Plugin.Log.LogInfo(
-                "KappaTracker: in-raid tracker hook not identified; surface disabled. " +
-                "Set [Surfaces] InRaidTracker = true to retry once a hook ships.");
+            // No hook exists yet (see notes above). The [Surfaces] InRaidTracker entry is a
+            // dormant retry switch: silent by default, and if a user turns it on we tell them
+            // once that there is still nothing to hook rather than leaving them wondering.
+            if (KappaConfig.InRaidTracker.Value)
+                Plugin.Log.LogInfo(
+                    "KappaTracker: [Surfaces] InRaidTracker is on, but no in-raid task HUD hook " +
+                    "is available in this build; the in-raid surface stays disabled.");
         }
     }
 }
