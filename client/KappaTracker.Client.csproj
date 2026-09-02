@@ -7,7 +7,9 @@
     <RootNamespace>KappaTracker.Client</RootNamespace>
     <Version>1.1.0</Version>
     <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
-    <OutputPath>bin\$(Configuration)\SPT_Runtime\BepInEx\plugins\KappaTracker\</OutputPath>
+    <!-- Write into the repo-root SPT_Runtime tree so Directory.Build.targets packages
+         this plugin alongside the server mod (see its PackageSptRuntime target). -->
+    <OutputPath>$(MSBuildThisFileDirectory)..\bin\$(Configuration)\SPT_Runtime\BepInEx\plugins\KappaTracker\</OutputPath>
     <EnableDefaultCompileItems>true</EnableDefaultCompileItems>
     <EftManaged Condition="'$(EFT_MANAGED)' != ''">$(EFT_MANAGED)</EftManaged>
     <EftManaged Condition="'$(EftManaged)' == ''">$(MSBuildThisFileDirectory)refs</EftManaged>

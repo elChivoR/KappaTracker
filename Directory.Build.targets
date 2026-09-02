@@ -11,6 +11,11 @@
       <_StageDir>$(MSBuildThisFileDirectory)bin\$(Configuration)\_package</_StageDir>
       <_ZipFile>$(MSBuildThisFileDirectory)bin\$(Configuration)\KappaTracker.zip</_ZipFile>
     </PropertyGroup>
+    <!-- Build the BepInEx client plugin first so its DLL is present in SPT_Runtime\
+         before this target stages + zips the tree (a ProjectReference from this
+         net10 web project to the net472 client is deliberately avoided). -->
+    <MSBuild Projects="$(MSBuildThisFileDirectory)client\KappaTracker.Client.csproj"
+             Properties="Configuration=$(Configuration)" Targets="Build" />
     <RemoveDir Directories="$(_StageDir)" />
     <ItemGroup>
       <_RuntimeFiles Include="$(_RuntimeDir)\**\*" />
