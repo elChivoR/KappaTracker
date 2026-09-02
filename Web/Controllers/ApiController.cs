@@ -40,6 +40,24 @@ namespace KappaTracker.Web.Controllers
             }
         }
 
+        [HttpGet("milestones")]
+        public ActionResult GetMilestones()
+        {
+            try
+            {
+                return Ok(new
+                {
+                    modVersion = ModInfo.Version,
+                    templateIds = _questService.GetKappaQuestIds(),
+                });
+            }
+            catch (Exception ex)
+            {
+                _logger.Error("[KappaTracker] Error getting milestone quest ids", ex);
+                return StatusCode(500, new { error = "Failed to get milestones" });
+            }
+        }
+
         [HttpGet("traders")]
         public ActionResult<List<TraderViewModel>> GetTraders()
         {
