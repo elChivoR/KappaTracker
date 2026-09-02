@@ -30,3 +30,7 @@ Thumbs.db
 
 # Per-machine SPT install path for building the client plugin (see Directory.Build.props)
 client/KappaTracker.Client.props.user
+
+# AI
+.claude/
+.superpowers/
