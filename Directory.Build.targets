@@ -1,0 +1,26 @@
+<Project>
+  <!-- Runs after the server mod builds. The client project (added in Task 4) also
+       writes into bin\$(Configuration)\SPT_Runtime\ before this, via its own build.
+       The archive is rooted at SPT_Runtime/ so it extracts straight into the SPT
+       root (see README "Installation"); ZipDirectory only archives a directory's
+       contents, so the tree is staged one level down first. -->
+  <Target Name="PackageSptRuntime" AfterTargets="Build"
+          Condition="'$(MSBuildProjectName)' == 'KappaTracker'">
+    <PropertyGroup>
+      <_RuntimeDir>$(MSBuildThisFileDirectory)bin\$(Configuration)\SPT_Runtime</_RuntimeDir>
+      <_StageDir>$(MSBuildThisFileDirectory)bin\$(Configuration)\_package</_StageDir>
+      <_ZipFile>$(MSBuildThisFileDirectory)bin\$(Configuration)\KappaTracker.zip</_ZipFile>
+    </PropertyGroup>
+    <RemoveDir Directories="$(_StageDir)" />
+    <ItemGroup>
+      <_RuntimeFiles Include="$(_RuntimeDir)\**\*" />
+    </ItemGroup>
+    <Copy SourceFiles="@(_RuntimeFiles)"
+          DestinationFiles="@(_RuntimeFiles->'$(_StageDir)\SPT_Runtime\%(RecursiveDir)%(Filename)%(Extension)')"
+          Condition="Exists('$(_RuntimeDir)')" />
+    <Delete Files="$(_ZipFile)" Condition="Exists('$(_ZipFile)')" />
+    <ZipDirectory SourceDirectory="$(_StageDir)" DestinationFile="$(_ZipFile)"
+                  Condition="Exists('$(_StageDir)')" />
+    <RemoveDir Directories="$(_StageDir)" />
+  </Target>
+</Project>

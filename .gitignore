@@ -27,3 +27,6 @@ icon-cache/
 # OS
 .DS_Store
 Thumbs.db
+
+# Client plugin reference assemblies (EFT / BepInEx) - never committed
+client/refs/

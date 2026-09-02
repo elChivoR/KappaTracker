@@ -4,10 +4,15 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
     <OutputType>Library</OutputType>
-    <Version>1.0.1</Version>
-    <OutputPath>bin\$(Configuration)\$(ProjectName)\$(AssemblyName)\</OutputPath>
+    <Version>1.1.0</Version>
+    <OutputPath>bin\$(Configuration)\SPT_Runtime\user\mods\KappaTracker\</OutputPath>
     <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
   </PropertyGroup>
+  <ItemGroup>
+    <Compile Remove="client\**\*.cs" />
+    <Content Remove="client\**\*" />
+    <None Remove="client\**\*" />
+  </ItemGroup>
   <ItemGroup>
     <PackageReference Include="SPTushonka.Common" Version="4.1.3" />
     <PackageReference Include="SPTushonka.DI" Version="4.1.3" />
@@ -19,20 +24,5 @@
       <WwwrootFiles Include="wwwroot\**\*" />
     </ItemGroup>
     <Copy SourceFiles="@(WwwrootFiles)" DestinationFiles="@(WwwrootFiles->'$(OutputPath)wwwroot\%(RecursiveDir)%(Filename)%(Extension)')" SkipUnchangedFiles="true" />
-  </Target>
-  <Target Name="CreateModPackage" AfterTargets="CopyWwwroot">
-    <PropertyGroup>
-      <_StagingDir>$(OutputPath)_package\SPT_Runtime\user\mods\$(AssemblyName)\</_StagingDir>
-      <_ZipFile>bin\$(Configuration)\$(AssemblyName).zip</_ZipFile>
-    </PropertyGroup>
-    <RemoveDir Directories="$(OutputPath)_package" />
-    <Copy SourceFiles="$(OutputPath)$(AssemblyName).dll" DestinationFolder="$(_StagingDir)" />
-    <ItemGroup>
-      <_PkgWwwroot Include="$(OutputPath)wwwroot\**\*" />
-    </ItemGroup>
-    <Copy SourceFiles="@(_PkgWwwroot)" DestinationFiles="@(_PkgWwwroot->'$(_StagingDir)wwwroot\%(RecursiveDir)%(Filename)%(Extension)')" />
-    <Delete Files="$(_ZipFile)" Condition="Exists('$(_ZipFile)')" />
-    <ZipDirectory SourceDirectory="$(OutputPath)_package" DestinationFile="$(_ZipFile)" />
-    <RemoveDir Directories="$(OutputPath)_package" />
   </Target>
 </Project>
