@@ -20,7 +20,7 @@ namespace KappaTracker.Client
                 "Tag rows in the trader dialogue task list.");
             QuestDetailHeader = cfg.Bind("Surfaces", "QuestDetailHeader", true,
                 "Tag the quest name in the task detail header.");
-            InRaidTracker = cfg.Bind("Surfaces", "InRaidTracker", true,
+            InRaidTracker = cfg.Bind("Surfaces", "InRaidTracker", false,
                 "Tag task names in the in-raid objective tracker (HUD).");
         }
     }
