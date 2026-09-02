@@ -4,7 +4,7 @@
 > progress toward the **Kappa** secure container — every milestone quest, its
 > requirements, and the full chain of quests you still need to unlock it.
 
-![Version](https://img.shields.io/badge/version-1.0.0-e6a23c)
+![Version](https://img.shields.io/badge/version-1.0.1-e6a23c)
 ![SPT](https://img.shields.io/badge/SPT-4.1.x-blue)
 ![License](https://img.shields.io/badge/license-MIT-green)
 
