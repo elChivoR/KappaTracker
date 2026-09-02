@@ -1,28 +1,34 @@
 <Project>
-  <!-- Runs after the server mod builds. The client project (added in Task 4) also
-       writes into bin\$(Configuration)\SPT_Runtime\ before this, via its own build.
-       The archive is rooted at SPT_Runtime/ so it extracts straight into the SPT
-       root (see README "Installation"); ZipDirectory only archives a directory's
-       contents, so the tree is staged one level down first. -->
+  <!-- Runs after the server mod builds. Two trees are produced under bin\$(Configuration)\:
+       SPT_Runtime\ (server mod, nested at user\mods\...) and BepInEx\ (the net472 client
+       plugin, written there by its own build). Both are staged at the archive root so the
+       zip extracts straight into the SPT root, where BepInEx\ is a sibling of SPT_Runtime\
+       (see README "Installation"). ZipDirectory only archives a directory's contents, so
+       the trees are staged one level down first. -->
   <Target Name="PackageSptRuntime" AfterTargets="Build"
           Condition="'$(MSBuildProjectName)' == 'KappaTracker'">
     <PropertyGroup>
       <_RuntimeDir>$(MSBuildThisFileDirectory)bin\$(Configuration)\SPT_Runtime</_RuntimeDir>
+      <_BepInExDir>$(MSBuildThisFileDirectory)bin\$(Configuration)\BepInEx</_BepInExDir>
       <_StageDir>$(MSBuildThisFileDirectory)bin\$(Configuration)\_package</_StageDir>
       <_ZipFile>$(MSBuildThisFileDirectory)bin\$(Configuration)\KappaTracker.zip</_ZipFile>
     </PropertyGroup>
-    <!-- Build the BepInEx client plugin first so its DLL is present in SPT_Runtime\
-         before this target stages + zips the tree (a ProjectReference from this
-         net10 web project to the net472 client is deliberately avoided). -->
+    <!-- Build the BepInEx client plugin first so its DLL is present in bin\$(Configuration)\BepInEx\
+         before this target stages + zips the trees (a ProjectReference from this net10 web
+         project to the net472 client is deliberately avoided). -->
     <MSBuild Projects="$(MSBuildThisFileDirectory)client\KappaTracker.Client.csproj"
              Properties="Configuration=$(Configuration)" Targets="Build" />
     <RemoveDir Directories="$(_StageDir)" />
     <ItemGroup>
       <_RuntimeFiles Include="$(_RuntimeDir)\**\*" />
+      <_BepInExFiles Include="$(_BepInExDir)\**\*" />
     </ItemGroup>
     <Copy SourceFiles="@(_RuntimeFiles)"
           DestinationFiles="@(_RuntimeFiles->'$(_StageDir)\SPT_Runtime\%(RecursiveDir)%(Filename)%(Extension)')"
           Condition="Exists('$(_RuntimeDir)')" />
+    <Copy SourceFiles="@(_BepInExFiles)"
+          DestinationFiles="@(_BepInExFiles->'$(_StageDir)\BepInEx\%(RecursiveDir)%(Filename)%(Extension)')"
+          Condition="Exists('$(_BepInExDir)')" />
     <Delete Files="$(_ZipFile)" Condition="Exists('$(_ZipFile)')" />
     <ZipDirectory SourceDirectory="$(_StageDir)" DestinationFile="$(_ZipFile)"
                   Condition="Exists('$(_StageDir)')" />
