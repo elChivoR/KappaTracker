@@ -621,3 +621,117 @@
     margin-bottom: 12px;
     font-size: 12px;
 }
+
+/* ---------- update badge & toast ---------- */
+
+.kappa-update-badge {
+    display: inline-block;
+    border-radius: 999px;
+    padding: 2px 8px;
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    line-height: 1.4;
+    text-transform: uppercase;
+    text-decoration: none;
+    color: #78350f;
+    background: #fbbf24;
+    border: 1px solid #fbbf24;
+    transition: filter 0.15s, transform 0.15s;
+}
+
+.kappa-update-badge:hover {
+    filter: brightness(1.08);
+    transform: translateY(-1px);
+}
+
+.kappa-update-badge:focus-visible {
+    outline: 2px solid var(--spt-accent, #facc15);
+    outline-offset: 1px;
+}
+
+/* Floating update notice — bottom-right, dismissible */
+.kappa-update-toast {
+    position: fixed;
+    right: 20px;
+    bottom: 20px;
+    z-index: 1400;
+    width: 320px;
+    max-width: calc(100vw - 40px);
+    padding: 14px 16px 14px;
+    border-radius: 8px;
+    background: var(--spt-surface, rgba(9, 9, 11, 0.92));
+    border: 1px solid rgba(250, 204, 21, 0.4);
+    border-left: 3px solid #fbbf24;
+    box-shadow: 0 8px 28px rgba(0, 0, 0, 0.5);
+    color: var(--spt-text, #f8fafc);
+    animation: kappa-toast-in 0.18s ease-out;
+}
+
+@keyframes kappa-toast-in {
+    from { opacity: 0; transform: translateY(8px); }
+    to   { opacity: 1; transform: translateY(0); }
+}
+
+.kappa-update-toast-close {
+    position: absolute;
+    top: 6px;
+    right: 8px;
+    width: 22px;
+    height: 22px;
+    padding: 0;
+    line-height: 20px;
+    font-size: 18px;
+    background: transparent;
+    border: none;
+    border-radius: 4px;
+    color: var(--spt-text-muted, #a1a1aa);
+    cursor: pointer;
+}
+
+.kappa-update-toast-close:hover {
+    background: rgba(255, 255, 255, 0.06);
+    color: var(--spt-text, #f8fafc);
+}
+
+.kappa-update-toast-close:focus-visible {
+    outline: 2px solid var(--spt-accent, #facc15);
+    outline-offset: 1px;
+}
+
+.kappa-update-toast-title {
+    font-weight: 700;
+    font-size: 13px;
+    margin-bottom: 4px;
+    padding-right: 20px;
+    color: #facc15;
+}
+
+.kappa-update-toast-body {
+    font-size: 12px;
+    line-height: 1.5;
+    color: var(--spt-text-muted, #a1a1aa);
+}
+
+.kappa-update-toast-body strong {
+    color: var(--spt-text, #f8fafc);
+    font-variant-numeric: tabular-nums;
+}
+
+.kappa-update-toast-link {
+    display: inline-block;
+    margin-top: 10px;
+    font-size: 12px;
+    font-weight: 600;
+    text-decoration: none;
+    color: #facc15;
+}
+
+.kappa-update-toast-link:hover {
+    text-decoration: underline;
+}
+
+.kappa-update-toast-link:focus-visible {
+    outline: 2px solid var(--spt-accent, #facc15);
+    outline-offset: 1px;
+}

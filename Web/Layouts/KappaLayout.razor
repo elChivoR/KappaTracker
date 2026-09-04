@@ -1,3 +1,5 @@
+@inject UpdateCheckService UpdateCheck
+
 <HeadContent>
     <link href="/KappaTracker/css/kappa.css" rel="stylesheet" />
 </HeadContent>
@@ -13,6 +15,15 @@
                     <div class="d-flex align-center gap-2">
                         <MudText Typo="Typo.h5" Class="spt-title">Kappa Tracker</MudText>
                         <span class="kappa-version">v@(KappaTracker.ModInfo.Version)</span>
+                        @if (_update is { Available: true })
+                        {
+                            <a class="kappa-update-badge"
+                               href="@_update.Url"
+                               target="_blank"
+                               rel="noopener noreferrer">
+                                New version v@_update.LatestVersion
+                            </a>
+                        }
                     </div>
                     <MudText Typo="Typo.body2" Class="spt-muted">
                         Track your progress toward the Kappa secure container
@@ -25,7 +36,33 @@
     </div>
 </div>
 
+@if (_update is { Available: true } && !_updateDismissed)
+{
+    <div class="kappa-update-toast">
+        <button class="kappa-update-toast-close" @onclick="() => _updateDismissed = true" aria-label="Close">&times;</button>
+        <div class="kappa-update-toast-title">Update available</div>
+        <div class="kappa-update-toast-body">
+            A new version of Kappa Tracker is available (<strong>v@_update.LatestVersion</strong>).
+            You have v@(KappaTracker.ModInfo.Version).
+        </div>
+        <a class="kappa-update-toast-link"
+           href="@_update.Url"
+           target="_blank"
+           rel="noopener noreferrer">
+            View release and download →
+        </a>
+    </div>
+}
+
 @code {
     [Parameter, EditorRequired]
     public RenderFragment? ChildContent { get; set; }
+
+    private UpdateInfo? _update;
+    private bool _updateDismissed;
+
+    protected override async Task OnInitializedAsync()
+    {
+        _update = await UpdateCheck.GetUpdateInfoAsync();
+    }
 }
