@@ -40,10 +40,14 @@ jobs:
           cat RELEASE_NOTES.md
 
       - name: Scan DLLs with VirusTotal
-        if: ${{ secrets.VT_API_KEY != '' }}
         env:
           VT_API_KEY: ${{ secrets.VT_API_KEY }}
         run: |
+          if [ -z "$VT_API_KEY" ]; then
+            echo "VT_API_KEY not set, skipping scan"
+            exit 0
+          fi
+
           scan_file() {
             local FILE="$1"
             local NAME="$2"
