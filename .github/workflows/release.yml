@@ -1,0 +1,38 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v[0-9]+.[0-9]+.[0-9]+'
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.x'
+
+      - name: Build server mod
+        run: dotnet build KappaTracker.csproj -c Release
+        # Produces bin/Release/KappaTracker.zip (server mod only; client plugin
+        # is skipped because SPT_ROOT is not set in CI).
+
+      - name: Add client plugin to zip
+        run: |
+          mkdir -p _stage/BepInEx/plugins/KappaTracker
+          cp ci-artifacts/KappaTracker.Client.dll _stage/BepInEx/plugins/KappaTracker/
+          cd _stage && zip -ur ../bin/Release/KappaTracker.zip .
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: bin/Release/KappaTracker.zip
+          generate_release_notes: true
