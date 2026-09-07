@@ -39,6 +39,16 @@ jobs:
           awk "/^## \[$VERSION\]/{found=1; next} /^## \[/{if(found) exit} found{print}" CHANGELOG.md > RELEASE_NOTES.md
           cat RELEASE_NOTES.md
 
+      - name: Delete existing release if present
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          RELEASE_ID=$(gh api repos/${{ github.repository }}/releases/tags/${{ github.ref_name }} --jq '.id' 2>/dev/null || true)
+          if [ -n "$RELEASE_ID" ] && [ "$RELEASE_ID" != "null" ]; then
+            gh api repos/${{ github.repository }}/releases/$RELEASE_ID -X DELETE
+            echo "Deleted existing release $RELEASE_ID"
+          fi
+
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         with:
