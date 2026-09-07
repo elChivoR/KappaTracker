@@ -33,16 +33,14 @@ jobs:
           cp ci-artifacts/KappaTracker.Client.dll _stage/BepInEx/plugins/KappaTracker/
           cd _stage && zip -ur ../bin/Release/KappaTracker.zip .
 
-      - name: Generate changelog
-        uses: orhun/git-cliff-action@v4
-        with:
-          config: cliff.toml
-          args: --latest --strip header
-        env:
-          OUTPUT: CHANGELOG.md
+      - name: Extract release notes
+        run: |
+          VERSION=${GITHUB_REF_NAME#v}
+          awk "/^## \[$VERSION\]/{found=1; next} /^## \[/{if(found) exit} found{print}" CHANGELOG.md > RELEASE_NOTES.md
+          cat RELEASE_NOTES.md
 
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         with:
           files: bin/Release/KappaTracker.zip
-          body_path: CHANGELOG.md
+          body_path: RELEASE_NOTES.md
