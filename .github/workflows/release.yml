@@ -35,13 +35,14 @@ jobs:
 
       - name: Generate changelog
         uses: orhun/git-cliff-action@v4
-        id: cliff
         with:
           config: cliff.toml
           args: --latest --strip header
+        env:
+          OUTPUT: CHANGELOG.md
 
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         with:
           files: bin/Release/KappaTracker.zip
-          body: ${{ steps.cliff.outputs.content }}
+          body_path: CHANGELOG.md
