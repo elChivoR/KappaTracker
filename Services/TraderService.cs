@@ -43,9 +43,9 @@ namespace KappaTracker.Services
         }
 
         /// <summary>Only traders that have at least one Kappa quest are returned.</summary>
-        public List<TraderViewModel> GetAllTraders()
+        public List<TraderViewModel> GetAllTraders(string? profileId = null)
         {
-            var player = _profileService.GetActivePlayer();
+            var player = _profileService.GetActivePlayer(profileId);
             var traders = new List<TraderViewModel>();
 
             foreach (var trader in _tradersTable.Values)
@@ -55,7 +55,7 @@ namespace KappaTracker.Services
                     continue;
 
                 var traderId = (string)baseData.Id;
-                var quests = _questService.GetQuestsByTrader(traderId, includeChain: false);
+                var quests = _questService.GetQuestsByTrader(traderId, includeChain: false, profileId: profileId);
                 if (quests.Count == 0)
                     continue;
 

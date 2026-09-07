@@ -25,15 +25,55 @@ namespace KappaTracker.Services
         }
 
         /// <summary>
-        /// Returns progress for the most recently active PMC profile, falling back to the
-        /// first initialised profile when no session has been active in the last 60 minutes.
+        /// All initialised PMC profiles on the server, sorted with recently-active first.
         /// </summary>
-        public PlayerProgress GetActivePlayer()
+        public List<ProfileSummary> GetAllProfileSummaries()
+        {
+            var recentIds = new HashSet<string>(_profileActivity.GetActiveProfileIdsWithinMinutes(60));
+            var summaries = new List<ProfileSummary>();
+
+            foreach (var (sessionId, profile) in _profileHelper.GetProfiles())
+            {
+                var pmc = profile?.CharacterData?.PmcData;
+                if (pmc?.Info is null) continue;
+
+                summaries.Add(new ProfileSummary
+                {
+                    SessionId = sessionId,
+                    Nickname = pmc.Info.Nickname ?? string.Empty,
+                    Level = pmc.Info.Level ?? 1,
+                    IsActive = recentIds.Contains(sessionId)
+                });
+            }
+
+            return summaries
+                .OrderByDescending(s => s.IsActive)
+                .ThenBy(s => s.Nickname, StringComparer.OrdinalIgnoreCase)
+                .ToList();
+        }
+
+        /// <summary>
+        /// Returns progress for the requested profile, or auto-detects the most recently
+        /// active one when <paramref name="profileId"/> is null/empty.
+        /// </summary>
+        public PlayerProgress GetActivePlayer(string? profileId = null)
         {
             var allProfiles = _profileHelper.GetProfiles();
-            var recentIds = _profileActivity.GetActiveProfileIdsWithinMinutes(60);
 
-            // Prefer the most recently active profile that has an initialised PMC.
+            // Explicit profile requested — use it directly.
+            if (!string.IsNullOrEmpty(profileId))
+            {
+                if (allProfiles.TryGetValue(profileId, out var specific))
+                {
+                    var specificPmc = specific?.CharacterData?.PmcData;
+                    if (specificPmc?.Info is not null)
+                        return BuildProgress(specificPmc);
+                }
+                _logger.Warning($"[KappaTracker] Profile {profileId} not found; falling back to auto-detect");
+            }
+
+            // Auto-detect: prefer the most recently active session.
+            var recentIds = _profileActivity.GetActiveProfileIdsWithinMinutes(60);
             foreach (var id in recentIds)
             {
                 if (!allProfiles.TryGetValue(id, out var recent)) continue;
@@ -42,7 +82,7 @@ namespace KappaTracker.Services
                 return BuildProgress(recentPmc);
             }
 
-            // Fall back: first initialised PMC on the server (original behaviour).
+            // Final fallback: first initialised PMC (original behaviour).
             foreach (var (_, profile) in allProfiles)
             {
                 var pmc = profile?.CharacterData?.PmcData;

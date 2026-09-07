@@ -128,10 +128,10 @@ namespace KappaTracker.Services
         /// Kappa-relevant quests for a trader, with localised name/description and their
         /// completion state for the active profile.
         /// </summary>
-        public List<QuestViewModel> GetQuestsByTrader(string traderId, bool includeChain = true)
+        public List<QuestViewModel> GetQuestsByTrader(string traderId, bool includeChain = true, string? profileId = null)
         {
             var kappaIds = GetKappaQuestIds();
-            var player = _profileService.GetActivePlayer();
+            var player = _profileService.GetActivePlayer(profileId);
             var quests = new List<QuestViewModel>();
 
             foreach (var quest in _questHelper.GetQuestsFromDb())
@@ -167,13 +167,13 @@ namespace KappaTracker.Services
         /// live status for the active profile, hand-in requirements, and its start-gate note.
         /// Returns null if the id is not in the quest database. PrerequisiteChain is left empty.
         /// </summary>
-        public QuestViewModel? GetQuestDetail(string questId)
+        public QuestViewModel? GetQuestDetail(string questId, string? profileId = null)
         {
             var quest = _questHelper.GetQuestsFromDb().FirstOrDefault(q => (string)q.Id == questId);
             if (quest is null)
                 return null;
 
-            var player = _profileService.GetActivePlayer();
+            var player = _profileService.GetActivePlayer(profileId);
             var rawStatus = player.QuestStatusById.GetValueOrDefault(questId, KappaQuestStatus.Locked);
             var (status, viaAlt) = ResolveAlternativeRoute(questId, rawStatus, player);
 

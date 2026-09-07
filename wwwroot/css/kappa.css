@@ -158,6 +158,10 @@
     margin-bottom: 14px;
 }
 
+.kappa-profile-select {
+    width: 100%;
+}
+
 .kappa-filter-text {
     flex: 1 1 240px;
 }

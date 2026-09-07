@@ -4,6 +4,7 @@
 @inject KappaService KappaService
 @inject TraderService TraderService
 @inject QuestService QuestService
+@inject ProfileService ProfileService
 
 <PageTitle>Kappa Tracker</PageTitle>
 
@@ -12,6 +13,21 @@
 
         <!-- ===== Sidebar ===== -->
         <MudPaper Elevation="0" Class="spt-panel kappa-sidebar pa-3">
+            @if (_profiles is { Count: > 1 })
+            {
+                <MudSelect T="string" Value="@(_selectedProfileId ?? "")" ValueChanged="OnProfileChanged"
+                           Label="Profile" Dense="true" Variant="Variant.Outlined" Margin="Margin.Dense"
+                           Class="kappa-profile-select mb-3">
+                    <MudSelectItem T="string" Value="@("")">Auto (most recent)</MudSelectItem>
+                    @foreach (var p in _profiles)
+                    {
+                        <MudSelectItem T="string" Value="@p.SessionId">
+                            @p.Nickname · Lv @p.Level
+                        </MudSelectItem>
+                    }
+                </MudSelect>
+            }
+
             <MudText Typo="Typo.overline" Class="spt-muted">Overall progress</MudText>
 
             @if (progress is null)
@@ -217,6 +233,9 @@
     private string? selectedTraderId;
     private System.Threading.Timer? refreshTimer;
 
+    private List<ProfileSummary>? _profiles;
+    private string? _selectedProfileId;
+
     private readonly HashSet<string> chainOpen = new();
 
     private QuestViewModel? modalQuest;
@@ -291,7 +310,7 @@
     {
         try
         {
-            modalQuest = QuestService.GetQuestDetail(questId);
+            modalQuest = QuestService.GetQuestDetail(questId, _selectedProfileId);
         }
         catch (Exception ex)
         {
@@ -315,6 +334,7 @@
 
     protected override void OnInitialized()
     {
+        _profiles = ProfileService.GetAllProfileSummaries();
         Reload();
 
         // Auto-sync every 5 seconds; disposed with the component.
@@ -328,17 +348,28 @@
         }, null, TimeSpan.FromSeconds(5), TimeSpan.FromSeconds(5));
     }
 
+    private void OnProfileChanged(string profileId)
+    {
+        _selectedProfileId = string.IsNullOrEmpty(profileId) ? null : profileId;
+        selectedTraderId = null;
+        currentTrader = null;
+        quests = null;
+        chainOpen.Clear();
+        modalQuest = null;
+        Reload();
+    }
+
     private void Reload()
     {
         try
         {
-            progress = KappaService.GetKappaProgress();
-            traders = TraderService.GetAllTraders();
+            progress = KappaService.GetKappaProgress(_selectedProfileId);
+            traders = TraderService.GetAllTraders(_selectedProfileId);
 
             if (selectedTraderId is not null)
             {
                 currentTrader = traders.FirstOrDefault(t => t.TraderId == selectedTraderId);
-                quests = currentTrader is null ? null : QuestService.GetQuestsByTrader(selectedTraderId);
+                quests = currentTrader is null ? null : QuestService.GetQuestsByTrader(selectedTraderId, profileId: _selectedProfileId);
             }
         }
         catch (Exception ex)
@@ -358,7 +389,7 @@
         currentTrader = traders?.FirstOrDefault(t => t.TraderId == traderId);
         try
         {
-            quests = QuestService.GetQuestsByTrader(traderId);
+            quests = QuestService.GetQuestsByTrader(traderId, profileId: _selectedProfileId);
         }
         catch (Exception ex)
         {

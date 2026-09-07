@@ -26,9 +26,9 @@ namespace KappaTracker.Services
             _profileService = profileService;
         }
 
-        public KappaProgressViewModel GetKappaProgress()
+        public KappaProgressViewModel GetKappaProgress(string? profileId = null)
         {
-            var player = _profileService.GetActivePlayer();
+            var player = _profileService.GetActivePlayer(profileId);
             var byTrader = new Dictionary<string, TraderProgressViewModel>();
             var totalRequired = 0;
             var totalCompleted = 0;
@@ -63,7 +63,7 @@ namespace KappaTracker.Services
             };
         }
 
-        public TraderProgressViewModel GetTraderProgress(string traderId)
+        public TraderProgressViewModel GetTraderProgress(string traderId, string? profileId = null)
         {
             var trader = _tradersTable.GetTrader(traderId);
             if (trader?.Base is null)
@@ -72,7 +72,7 @@ namespace KappaTracker.Services
                 return new TraderProgressViewModel { TraderId = traderId };
             }
 
-            return BuildTraderProgress(trader, _profileService.GetActivePlayer());
+            return BuildTraderProgress(trader, _profileService.GetActivePlayer(profileId));
         }
 
         private TraderProgressViewModel BuildTraderProgress(Trader trader, PlayerProgress player)
