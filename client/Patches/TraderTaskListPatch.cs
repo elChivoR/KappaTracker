@@ -17,9 +17,11 @@ namespace KappaTracker.Client
     //   quest  : public Quest Quest;  field on QuestListItem — Quest.Template.Id is the
     //            24-hex template id (same value the milestone fetch stores), reached as
     //            Traverse.Create(__instance).Field("Quest").Property("Template").Property("Id").
-    //   label  : public CustomTextMeshProUGUI _title;  field on QuestListItem — mutated
-    //            via its string `text` property through Traverse, so this assembly needs
-    //            no UnityEngine.UI / TMPro reference.
+    //   status : public CustomTextMeshProUGUI _status; field on QuestListItem — right-side
+    //            status indicator ("active!", "ready to hand over", etc.).  The badge is
+    //            prepended here when visible so it inherits the status color (orange for
+    //            "active!").  Falls back to a colored <color=…>KAPPA · </color> prefix on
+    //            _title when the status GameObject is inactive (quest not yet accepted).
     internal static class TraderTaskListPatch
     {
         public static void Patch(Harmony h)
@@ -34,6 +36,10 @@ namespace KappaTracker.Client
         }
 
         private static bool _loggedError;
+
+        // Kappa badge color used as title fallback when the status label is hidden.
+        // Matches EFT's "active!" gold so the badge reads as a status indicator.
+        private const string KappaColor = "#00D4C8";
 
         private static void Postfix(object __instance)
         {
@@ -52,13 +58,32 @@ namespace KappaTracker.Client
                 if (string.IsNullOrEmpty(templateId) || !KappaTagService.IsKappa(templateId))
                     return;
 
-                var label = Traverse.Create(__instance).Field("_title").GetValue();
-                if (label == null)
+                var statusLabel = Traverse.Create(__instance).Field("_status").GetValue();
+                if (statusLabel == null)
                     return;
 
-                var textProp = Traverse.Create(label).Property("text");
-                var current = textProp.GetValue<string>();
-                textProp.SetValue(KappaTagService.Decorate(templateId, current));
+                var go = Traverse.Create(statusLabel).Property("gameObject").GetValue();
+                if (go == null)
+                    return;
+
+                bool statusVisible = Traverse.Create(go).Property("activeSelf").GetValue<bool>();
+                var statusText = Traverse.Create(statusLabel).Property("text");
+
+                if (statusVisible)
+                {
+                    // Badge in gold; status text keeps its existing color (e.g. orange for "active!").
+                    var current = statusText.GetValue<string>();
+                    if (!string.IsNullOrEmpty(current) && !current.StartsWith("KAPPA", StringComparison.Ordinal))
+                        statusText.SetValue($"<color={KappaColor}>KAPPA · </color>" + current);
+                }
+                else
+                {
+                    // Status hidden (AvailableForStart / Locked): force-show with just the badge.
+                    Traverse.Create(go).Method("SetActive", true).GetValue();
+                    var current = statusText.GetValue<string>();
+                    if (string.IsNullOrEmpty(current) || !current.StartsWith("KAPPA", StringComparison.Ordinal))
+                        statusText.SetValue($"<color={KappaColor}>KAPPA</color>");
+                }
             }
             catch (Exception ex)
             {

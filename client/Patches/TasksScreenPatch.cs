@@ -8,17 +8,15 @@ namespace KappaTracker.Client
     //   method : public void Show(Quest quest, IEftSession session, InventoryController inventoryController,
     //                             QuestController questController, NotesTaskDescriptionShort description,
     //                             FavoriteQuestManager favoriteQuests, bool availability)
-    //            (single overload; inside it: `_taskLabel.text = quest.Template.Name;`)
+    //            (single overload; `_statusLabel.text` is always set inside Show for Started /
+    //            AvailableForFinish / MarkedAsFailed — the only statuses passed to NotesTask).
     //   quest  : Show's `quest` parameter — EFT.Quests.Quest; quest.Template.Id is
     //            `[JsonProperty("_id")] public string Id { get; set; }` on EFT.Quests.QuestTemplate
     //            (the 24-hex template id; same value the milestone fetch stores).
-    //            Also mirrored on the private `_quest` field, but the parameter avoids a stale
-    //            pooled-row value on Show's early-return path.
-    //   label  : public TextMeshProUGUI _taskLabel  (field on NotesTask) — mutated via its
-    //            string `text` property through Traverse, so this assembly needs no
-    //            UnityEngine.UI / TMPro reference.
-    //   style  : B — mutate _taskLabel.text in a postfix (the name is assigned inside Show,
-    //            not returned by a dedicated string method, so there is no Style-A target).
+    //   label  : public TextMeshProUGUI _timerLabel (field on NotesTask) — normally hidden for
+    //            non-daily quests, positioned in the column between the quest name and location.
+    //            We force it active and set it to the KAPPA badge in cyan, leaving _statusLabel
+    //            ("active!", etc.) completely untouched.
     internal static class TasksScreenPatch
     {
         public static void Patch(Harmony h)
@@ -34,6 +32,8 @@ namespace KappaTracker.Client
 
         private static bool _loggedError;
 
+        private const string KappaColor = "#00D4C8";
+
         private static void Postfix(object __instance, object quest)
         {
             try
@@ -47,13 +47,18 @@ namespace KappaTracker.Client
                 if (string.IsNullOrEmpty(templateId) || !KappaTagService.IsKappa(templateId))
                     return;
 
-                var label = Traverse.Create(__instance).Field("_taskLabel").GetValue();
-                if (label == null)
+                // Activate the timer label column (hidden for non-daily quests) and show the badge.
+                // _statusLabel ("active!", etc.) is left completely untouched.
+                var timerLabel = Traverse.Create(__instance).Field("_timerLabel").GetValue();
+                if (timerLabel == null)
                     return;
 
-                var textProp = Traverse.Create(label).Property("text");
-                var current = textProp.GetValue<string>();
-                textProp.SetValue(KappaTagService.Decorate(templateId, current));
+                var go = Traverse.Create(timerLabel).Property("gameObject").GetValue();
+                if (go == null)
+                    return;
+
+                Traverse.Create(go).Method("SetActive", true).GetValue();
+                Traverse.Create(timerLabel).Property("text").SetValue($"<color={KappaColor}>KAPPA</color>");
             }
             catch (Exception ex)
             {
