@@ -4,7 +4,7 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
     <OutputType>Library</OutputType>
-    <Version>1.1.0</Version>
+    <Version>1.3.0</Version>
     <OutputPath>bin\$(Configuration)\SPT_Runtime\user\mods\KappaTracker\</OutputPath>
     <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
   </PropertyGroup>

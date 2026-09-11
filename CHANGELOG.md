@@ -1,6 +1,6 @@
 # Changelog
 
-## [1.3.0]
+## [1.3.0] - 2026-09-11
 
 ### Added
 - Kappa-only toggle in the trader task filter bar

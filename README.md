@@ -5,7 +5,7 @@
 > requirements, and the full chain of quests you still need to unlock it — plus a
 > companion BepInEx plugin that tags those quests inside the game's own task UI.
 
-![Version](https://img.shields.io/badge/version-1.1.0-e6a23c)
+![Version](https://img.shields.io/badge/version-1.3.0-e6a23c)
 ![SPT](https://img.shields.io/badge/SPT-4.1.x-blue)
 ![License](https://img.shields.io/badge/license-MIT-green)
 
