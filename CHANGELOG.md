@@ -1,5 +1,14 @@
 # Changelog
 
+## [1.3.0]
+
+### Added
+- Kappa-only toggle in the trader task filter bar
+- Task Search mod integration — the `kappa` keyword now filters to Kappa-only quests when Task Search is installed
+
+### Changed
+- KAPPA badge moved to the status chip on both the task list and trader dialogue surfaces
+
 ## [1.2.0] - 2026-09-07
 
 ### Added
