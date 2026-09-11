@@ -34,3 +34,8 @@ client/KappaTracker.Client.props.user
 # AI
 .claude/
 .superpowers/
+.mcp.json
+
+# Local docs (specs, media not meant for the public repo)
+docs/superpowers/
+docs/media/
