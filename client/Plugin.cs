@@ -32,6 +32,9 @@ namespace KappaTracker.Client
             try { KappaSearchFilterPatch.Patch(harmony); }
             catch (Exception ex) { Log.LogError($"KappaTracker: KappaSearchFilter patch registration failed: {ex}"); }
 
+            try { TraderKappaTogglePatch.Patch(harmony); }
+            catch (Exception ex) { Log.LogError($"KappaTracker: TraderKappaToggle patch registration failed: {ex}"); }
+
             // One-shot: poll for the session token, then fetch the Kappa milestone id set once.
             StartCoroutine(MilestoneBootstrap.Run());
 
